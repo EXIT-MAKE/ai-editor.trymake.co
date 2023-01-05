@@ -39,6 +39,12 @@ class Video {
          * @type {number}
          */
         this._forceTransparentPreview = false;
+
+                /**
+         * Store a flag that allows the preview to be forced transparent.
+         * @type {Promise}
+         */
+                this._cocossd_model = null;
     }
 
     static get FORMAT_IMAGE_DATA () {
@@ -203,6 +209,42 @@ class Video {
         // flag and override the current ghost. The complexity is to prevent blocks
         // from overriding forceTransparentPreview
         this.setPreviewGhost(this._ghost);
+    }
+
+    /**
+     * COCO-SSD Object Detection Console Log function
+     */
+    cocossdPredict() {
+        if (this.provider) {
+            this.provider.runCocossd();
+        }
+    }
+
+    /**
+     * Return cocossd prediction info
+     *
+     * @param {number} order
+     *
+     * @return {string} detected object name
+     */
+    cocossdName(order) {
+        if (this.provider) {
+            return this.provider.nameCocoSsd(order);
+        }
+    }
+
+    /**
+     * Return cocossd prediction info
+     *
+     * @param {number} order
+     * @param {string} info
+     *
+     * @return {number} detected object info
+     */
+    cocossdInfo(order, info) {
+        if (this.provider) {
+            return this.provider.infoCocoSsd(order, info);
+        }
     }
 }
 

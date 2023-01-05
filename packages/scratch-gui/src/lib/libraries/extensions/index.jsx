@@ -1,5 +1,4 @@
 /* CODE GEN GUARD START: Please do not edit code within guards */
-import generatedDetails from './generated/details.generated';
 /* CODE GEN GUARD END: Please do not edit code within guards */
 
 import React from 'react';
@@ -74,7 +73,6 @@ import gdxforConnectionSmallIconURL from './gdxfor/gdxfor-small.svg';
 
 export default [
     /* CODE GEN GUARD START: Please do not edit code within guards */
-    ...generatedDetails,
     /* CODE GEN GUARD END: Please do not edit code within guards */
     {
         name: (
@@ -112,6 +110,20 @@ export default [
                 defaultMessage="Create a text classification model for use in a Scratch project!"
                 description="Text Classification Description"
                 id="gui.extension.text-classification.description"
+            />
+        ),
+        featured: true
+    },
+    {
+        name: "Object Detecting",
+        extensionId: 'objectDetecting',
+        iconURL: videoSensingIconURL,
+        insetIconURL: videoSensingInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="Object Detection"
+                description=""
+                id="gui.extension.object_detection.description"
             />
         ),
         featured: true

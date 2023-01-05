@@ -39,6 +39,7 @@ const builtinExtensions = {
     speech2text: () => require('../extensions/scratch3_speech2text'),
     translate: () => require('../extensions/scratch3_translate'),
     videoSensing: () => require('../extensions/scratch3_video_sensing'),
+    objectDetecting: () => require('../extensions/scratch3_object_detecting'),
     ev3: () => require('../extensions/scratch3_ev3'),
     makeymakey: () => require('../extensions/scratch3_makeymakey'),
     boost: () => require('../extensions/scratch3_boost'),
@@ -48,9 +49,9 @@ const builtinExtensions = {
     microbitRobot: () => require('../extensions/scratch3_microbot'),
     teachableMachine: () => require('../extensions/scratch3_teachable_machine'),
     textClassification: () => require('../extensions/scratch3_text_classification'),
-    poseFace: () => require('../extensions/scratch3_pose_face'),
-    poseHand: () => require('../extensions/scratch3_pose_hand'),
-    poseBody: () => require('../extensions/scratch3_pose_body')
+    poseFace: () => require('../extensions/scratch3_video_sensing'),
+    poseHand: () => require('../extensions/scratch3_video_sensing'),
+    poseBody: () => require('../extensions/scratch3_video_sensing')
 };
 
 /**
