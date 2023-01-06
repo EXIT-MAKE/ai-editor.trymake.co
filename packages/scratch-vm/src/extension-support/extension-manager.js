@@ -49,9 +49,9 @@ const builtinExtensions = {
     microbitRobot: () => require('../extensions/scratch3_microbot'),
     teachableMachine: () => require('../extensions/scratch3_teachable_machine'),
     textClassification: () => require('../extensions/scratch3_text_classification'),
-    poseFace: () => require('../extensions/scratch3_video_sensing'),
-    poseHand: () => require('../extensions/scratch3_video_sensing'),
-    poseBody: () => require('../extensions/scratch3_video_sensing')
+    poseFace: () => require('../extensions/scratch3_pose_face'),
+    poseHand: () => require('../extensions/scratch3_pose_hand'),
+    poseBody: () => require('../extensions/scratch3_pose_body')
 };
 
 /**
