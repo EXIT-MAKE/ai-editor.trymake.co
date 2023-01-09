@@ -217,7 +217,6 @@ class Scratch3PoseNetBlocks {
                 format: Video.FORMAT_IMAGE_DATA,
                 dimensions: Scratch3PoseNetBlocks.DIMENSIONS
             });
-
             const time = +new Date();
             if (frame) {
                 this.poseState = await this.estimatePoseOnImage(frame);

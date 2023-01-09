@@ -222,7 +222,7 @@ class Scratch3PoseNetBlocks {
                 format: Video.FORMAT_IMAGE_DATA,
                 dimensions: Scratch3PoseNetBlocks.DIMENSIONS
             });
-
+            console.log(frame);
             const time = +new Date();
             if (frame) {
                 this.affdexState = await this.estimateAffdexOnImage(frame);

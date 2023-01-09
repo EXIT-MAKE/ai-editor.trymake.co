@@ -1,30 +1,78 @@
-const Runtime = require("../../engine/runtime");
+require("regenerator-runtime/runtime");
+const Runtime = require('../../engine/runtime');
 
-const ArgumentType = require("../../extension-support/argument-type");
-const BlockType = require("../../extension-support/block-type");
-const Clone = require("../../util/clone");
-const Cast = require("../../util/cast");
-const formatMessage = require("format-message");
-const Video = require("../../io/video");
+const ArgumentType = require('../../extension-support/argument-type');
+const BlockType = require('../../extension-support/block-type');
+const Cast = require('../../util/cast');
+const formatMessage = require('format-message');
+const Video = require('../../io/video');
 
-const VideoMotion = require("./library");
-const { VideoState } = require("../scratch3_video_sensing");
+require("@tensorflow/tfjs-backend-cpu");
+require("@tensorflow/tfjs-backend-webgl");
+const cocoSsd = require("@tensorflow-models/coco-ssd");
+const tf = require("@tensorflow/tfjs");
+
+function friendlyRound(amount) {
+    return Number(amount).toFixed(2);
+}
 
 /**
  * Icon svg to be displayed in the blocks category menu, encoded as a data URI.
  * @type {string}
  */
 // eslint-disable-next-line max-len
-const menuIconURI =
-    "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjBweCIgaGVpZ2h0PSIyMHB4IiB2aWV3Qm94PSIwIDAgMjAgMjAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDUyLjIgKDY3MTQ1KSAtIGh0dHA6Ly93d3cuYm9oZW1pYW5jb2RpbmcuY29tL3NrZXRjaCAtLT4KICAgIDx0aXRsZT5FeHRlbnNpb25zL1NvZnR3YXJlL1ZpZGVvLVNlbnNpbmctTWVudTwvdGl0bGU+CiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4KICAgIDxnIGlkPSJFeHRlbnNpb25zL1NvZnR3YXJlL1ZpZGVvLVNlbnNpbmctTWVudSIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPGcgaWQ9InZpZGVvLW1vdGlvbiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsIDUuMDAwMDAwKSIgZmlsbC1ydWxlPSJub256ZXJvIj4KICAgICAgICAgICAgPGNpcmNsZSBpZD0iT3ZhbC1Db3B5IiBmaWxsPSIjMEVCRDhDIiBvcGFjaXR5PSIwLjI1IiBjeD0iMTYiIGN5PSI4IiByPSIyIj48L2NpcmNsZT4KICAgICAgICAgICAgPGNpcmNsZSBpZD0iT3ZhbC1Db3B5IiBmaWxsPSIjMEVCRDhDIiBvcGFjaXR5PSIwLjUiIGN4PSIxNiIgY3k9IjYiIHI9IjIiPjwvY2lyY2xlPgogICAgICAgICAgICA8Y2lyY2xlIGlkPSJPdmFsLUNvcHkiIGZpbGw9IiMwRUJEOEMiIG9wYWNpdHk9IjAuNzUiIGN4PSIxNiIgY3k9IjQiIHI9IjIiPjwvY2lyY2xlPgogICAgICAgICAgICA8Y2lyY2xlIGlkPSJPdmFsIiBmaWxsPSIjMEVCRDhDIiBjeD0iMTYiIGN5PSIyIiByPSIyIj48L2NpcmNsZT4KICAgICAgICAgICAgPHBhdGggZD0iTTExLjMzNTk3MzksMi4yMDk3ODgyNSBMOC4yNSw0LjIwOTk1NjQ5IEw4LjI1LDMuMDUgQzguMjUsMi4wNDQ4ODIyNyA3LjQ2ODU5MDMxLDEuMjUgNi41LDEuMjUgTDIuMDUsMS4yNSBDMS4wMzgwNzExOSwxLjI1IDAuMjUsMi4wMzgwNzExOSAwLjI1LDMuMDUgTDAuMjUsNyBDMC4yNSw3Ljk2MzY5OTM3IDEuMDQyMjQ5MTksOC43NTU5NDg1NiAyLjA1LDguOCBMNi41LDguOCBDNy40NTA4MzAwOSw4LjggOC4yNSw3Ljk3MzI3MjUgOC4yNSw3IEw4LjI1LDUuODU4NDUyNDEgTDguNjI4NjIzOTQsNi4wODU2MjY3NyBMMTEuNDI2Nzc2Nyw3Ljc3MzIyMzMgQzExLjQzNjg5NDMsNy43ODMzNDA5MSAxMS40NzU3NjU1LDcuOCAxMS41LDcuOCBDMTEuNjMzNDkzMiw3LjggMTEuNzUsNy42OTEyNjAzNCAxMS43NSw3LjU1IEwxMS43NSwyLjQgQzExLjc1LDIuNDE4MzgyNjkgMTEuNzIxOTAyOSwyLjM1MjgyMjgyIDExLjY4NTYyNjgsMi4yNzg2MjM5NCBDMTEuNjEyOTUyOCwyLjE1NzUwMDY5IDExLjQ3MDc5NjgsMi4xMjkwNjk1IDExLjMzNTk3MzksMi4yMDk3ODgyNSBaIiBpZD0idmlkZW9fMzdfIiBzdHJva2Utb3BhY2l0eT0iMC4xNSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjAuNSIgZmlsbD0iIzRENEQ0RCI+PC9wYXRoPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+";
+const menuIconURI = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMjBweCIgaGVpZ2h0PSIyMHB4IiB2aWV3Qm94PSIwIDAgMjAgMjAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDUyLjIgKDY3MTQ1KSAtIGh0dHA6Ly93d3cuYm9oZW1pYW5jb2RpbmcuY29tL3NrZXRjaCAtLT4KICAgIDx0aXRsZT5FeHRlbnNpb25zL1NvZnR3YXJlL1ZpZGVvLVNlbnNpbmctTWVudTwvdGl0bGU+CiAgICA8ZGVzYz5DcmVhdGVkIHdpdGggU2tldGNoLjwvZGVzYz4KICAgIDxnIGlkPSJFeHRlbnNpb25zL1NvZnR3YXJlL1ZpZGVvLVNlbnNpbmctTWVudSIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICAgICAgPGcgaWQ9InZpZGVvLW1vdGlvbiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsIDUuMDAwMDAwKSIgZmlsbC1ydWxlPSJub256ZXJvIj4KICAgICAgICAgICAgPGNpcmNsZSBpZD0iT3ZhbC1Db3B5IiBmaWxsPSIjMEVCRDhDIiBvcGFjaXR5PSIwLjI1IiBjeD0iMTYiIGN5PSI4IiByPSIyIj48L2NpcmNsZT4KICAgICAgICAgICAgPGNpcmNsZSBpZD0iT3ZhbC1Db3B5IiBmaWxsPSIjMEVCRDhDIiBvcGFjaXR5PSIwLjUiIGN4PSIxNiIgY3k9IjYiIHI9IjIiPjwvY2lyY2xlPgogICAgICAgICAgICA8Y2lyY2xlIGlkPSJPdmFsLUNvcHkiIGZpbGw9IiMwRUJEOEMiIG9wYWNpdHk9IjAuNzUiIGN4PSIxNiIgY3k9IjQiIHI9IjIiPjwvY2lyY2xlPgogICAgICAgICAgICA8Y2lyY2xlIGlkPSJPdmFsIiBmaWxsPSIjMEVCRDhDIiBjeD0iMTYiIGN5PSIyIiByPSIyIj48L2NpcmNsZT4KICAgICAgICAgICAgPHBhdGggZD0iTTExLjMzNTk3MzksMi4yMDk3ODgyNSBMOC4yNSw0LjIwOTk1NjQ5IEw4LjI1LDMuMDUgQzguMjUsMi4wNDQ4ODIyNyA3LjQ2ODU5MDMxLDEuMjUgNi41LDEuMjUgTDIuMDUsMS4yNSBDMS4wMzgwNzExOSwxLjI1IDAuMjUsMi4wMzgwNzExOSAwLjI1LDMuMDUgTDAuMjUsNyBDMC4yNSw3Ljk2MzY5OTM3IDEuMDQyMjQ5MTksOC43NTU5NDg1NiAyLjA1LDguOCBMNi41LDguOCBDNy40NTA4MzAwOSw4LjggOC4yNSw3Ljk3MzI3MjUgOC4yNSw3IEw4LjI1LDUuODU4NDUyNDEgTDguNjI4NjIzOTQsNi4wODU2MjY3NyBMMTEuNDI2Nzc2Nyw3Ljc3MzIyMzMgQzExLjQzNjg5NDMsNy43ODMzNDA5MSAxMS40NzU3NjU1LDcuOCAxMS41LDcuOCBDMTEuNjMzNDkzMiw3LjggMTEuNzUsNy42OTEyNjAzNCAxMS43NSw3LjU1IEwxMS43NSwyLjQgQzExLjc1LDIuNDE4MzgyNjkgMTEuNzIxOTAyOSwyLjM1MjgyMjgyIDExLjY4NTYyNjgsMi4yNzg2MjM5NCBDMTEuNjEyOTUyOCwyLjE1NzUwMDY5IDExLjQ3MDc5NjgsMi4xMjkwNjk1IDExLjMzNTk3MzksMi4yMDk3ODgyNSBaIiBpZD0idmlkZW9fMzdfIiBzdHJva2Utb3BhY2l0eT0iMC4xNSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjAuNSIgZmlsbD0iIzRENEQ0RCI+PC9wYXRoPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+';
 
 /**
  * Icon svg to be displayed at the left edge of each extension block, encoded as a data URI.
  * @type {string}
  */
 // eslint-disable-next-line max-len
-const blockIconURI =
-    "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNDBweCIgaGVpZ2h0PSI0MHB4IiB2aWV3Qm94PSIwIDAgNDAgNDAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDUyLjIgKDY3MTQ1KSAtIGh0dHA6Ly93d3cuYm9oZW1pYW5jb2RpbmcuY29tL3NrZXRjaCAtLT4KICAgIDx0aXRsZT5FeHRlbnNpb25zL1NvZnR3YXJlL1ZpZGVvLVNlbnNpbmctQmxvY2s8L3RpdGxlPgogICAgPGRlc2M+Q3JlYXRlZCB3aXRoIFNrZXRjaC48L2Rlc2M+CiAgICA8ZyBpZD0iRXh0ZW5zaW9ucy9Tb2Z0d2FyZS9WaWRlby1TZW5zaW5nLUJsb2NrIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2Utb3BhY2l0eT0iMC4xNSI+CiAgICAgICAgPGcgaWQ9InZpZGVvLW1vdGlvbiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsIDEwLjAwMDAwMCkiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSIjMDAwMDAwIj4KICAgICAgICAgICAgPGNpcmNsZSBpZD0iT3ZhbC1Db3B5IiBmaWxsPSIjRkZGRkZGIiBvcGFjaXR5PSIwLjI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGN4PSIzMiIgY3k9IjE2IiByPSI0LjUiPjwvY2lyY2xlPgogICAgICAgICAgICA8Y2lyY2xlIGlkPSJPdmFsLUNvcHkiIGZpbGw9IiNGRkZGRkYiIG9wYWNpdHk9IjAuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjeD0iMzIiIGN5PSIxMiIgcj0iNC41Ij48L2NpcmNsZT4KICAgICAgICAgICAgPGNpcmNsZSBpZD0iT3ZhbC1Db3B5IiBmaWxsPSIjRkZGRkZGIiBvcGFjaXR5PSIwLjc1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGN4PSIzMiIgY3k9IjgiIHI9IjQuNSI+PC9jaXJjbGU+CiAgICAgICAgICAgIDxjaXJjbGUgaWQ9Ik92YWwiIGZpbGw9IiNGRkZGRkYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY3g9IjMyIiBjeT0iNCIgcj0iNC41Ij48L2NpcmNsZT4KICAgICAgICAgICAgPHBhdGggZD0iTTIyLjY3MTk0NzcsNC40MTk1NzY0OSBMMTYuNSw4LjQxOTkxMjk4IEwxNi41LDYuMSBDMTYuNSw0LjA4OTc2NDU0IDE0LjkzNzE4MDYsMi41IDEzLDIuNSBMNC4xLDIuNSBDMi4wNzYxNDIzNywyLjUgMC41LDQuMDc2MTQyMzcgMC41LDYuMSBMMC41LDE0IEMwLjUsMTUuOTI3Mzk4NyAyLjA4NDQ5ODM5LDE3LjUxMTg5NzEgNC4xLDE3LjYgTDEzLDE3LjYgQzE0LjkwMTY2MDIsMTcuNiAxNi41LDE1Ljk0NjU0NSAxNi41LDE0IEwxNi41LDExLjcxNjkwNDggTDIyLjc1NzI0NzksMTUuNDcxMjUzNSBMMjIuODUzNTUzNCwxNS41NDY0NDY2IEMyMi44NzM3ODg2LDE1LjU2NjY4MTggMjIuOTUxNTMxLDE1LjYgMjMsMTUuNiBDMjMuMjY2OTg2NSwxNS42IDIzLjUsMTUuMzgyNTIwNyAyMy41LDE1LjEgTDIzLjUsNC44IEMyMy41LDQuODM2NzY1MzggMjMuNDQzODA1OCw0LjcwNTY0NTYzIDIzLjM3MTI1MzUsNC41NTcyNDc4OCBDMjMuMjI1OTA1Niw0LjMxNTAwMTM5IDIyLjk0MTU5MzcsNC4yNTgxMzg5OSAyMi42NzE5NDc3LDQuNDE5NTc2NDkgWiIgaWQ9InZpZGVvXzM3XyIgZmlsbD0iIzRENEQ0RCI+PC9wYXRoPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+";
+const blockIconURI = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iNDBweCIgaGVpZ2h0PSI0MHB4IiB2aWV3Qm94PSIwIDAgNDAgNDAiIHZlcnNpb249IjEuMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CiAgICA8IS0tIEdlbmVyYXRvcjogU2tldGNoIDUyLjIgKDY3MTQ1KSAtIGh0dHA6Ly93d3cuYm9oZW1pYW5jb2RpbmcuY29tL3NrZXRjaCAtLT4KICAgIDx0aXRsZT5FeHRlbnNpb25zL1NvZnR3YXJlL1ZpZGVvLVNlbnNpbmctQmxvY2s8L3RpdGxlPgogICAgPGRlc2M+Q3JlYXRlZCB3aXRoIFNrZXRjaC48L2Rlc2M+CiAgICA8ZyBpZD0iRXh0ZW5zaW9ucy9Tb2Z0d2FyZS9WaWRlby1TZW5zaW5nLUJsb2NrIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2Utb3BhY2l0eT0iMC4xNSI+CiAgICAgICAgPGcgaWQ9InZpZGVvLW1vdGlvbiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsIDEwLjAwMDAwMCkiIGZpbGwtcnVsZT0ibm9uemVybyIgc3Ryb2tlPSIjMDAwMDAwIj4KICAgICAgICAgICAgPGNpcmNsZSBpZD0iT3ZhbC1Db3B5IiBmaWxsPSIjRkZGRkZGIiBvcGFjaXR5PSIwLjI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGN4PSIzMiIgY3k9IjE2IiByPSI0LjUiPjwvY2lyY2xlPgogICAgICAgICAgICA8Y2lyY2xlIGlkPSJPdmFsLUNvcHkiIGZpbGw9IiNGRkZGRkYiIG9wYWNpdHk9IjAuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjeD0iMzIiIGN5PSIxMiIgcj0iNC41Ij48L2NpcmNsZT4KICAgICAgICAgICAgPGNpcmNsZSBpZD0iT3ZhbC1Db3B5IiBmaWxsPSIjRkZGRkZGIiBvcGFjaXR5PSIwLjc1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGN4PSIzMiIgY3k9IjgiIHI9IjQuNSI+PC9jaXJjbGU+CiAgICAgICAgICAgIDxjaXJjbGUgaWQ9Ik92YWwiIGZpbGw9IiNGRkZGRkYiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY3g9IjMyIiBjeT0iNCIgcj0iNC41Ij48L2NpcmNsZT4KICAgICAgICAgICAgPHBhdGggZD0iTTIyLjY3MTk0NzcsNC40MTk1NzY0OSBMMTYuNSw4LjQxOTkxMjk4IEwxNi41LDYuMSBDMTYuNSw0LjA4OTc2NDU0IDE0LjkzNzE4MDYsMi41IDEzLDIuNSBMNC4xLDIuNSBDMi4wNzYxNDIzNywyLjUgMC41LDQuMDc2MTQyMzcgMC41LDYuMSBMMC41LDE0IEMwLjUsMTUuOTI3Mzk4NyAyLjA4NDQ5ODM5LDE3LjUxMTg5NzEgNC4xLDE3LjYgTDEzLDE3LjYgQzE0LjkwMTY2MDIsMTcuNiAxNi41LDE1Ljk0NjU0NSAxNi41LDE0IEwxNi41LDExLjcxNjkwNDggTDIyLjc1NzI0NzksMTUuNDcxMjUzNSBMMjIuODUzNTUzNCwxNS41NDY0NDY2IEMyMi44NzM3ODg2LDE1LjU2NjY4MTggMjIuOTUxNTMxLDE1LjYgMjMsMTUuNiBDMjMuMjY2OTg2NSwxNS42IDIzLjUsMTUuMzgyNTIwNyAyMy41LDE1LjEgTDIzLjUsNC44IEMyMy41LDQuODM2NzY1MzggMjMuNDQzODA1OCw0LjcwNTY0NTYzIDIzLjM3MTI1MzUsNC41NTcyNDc4OCBDMjMuMjI1OTA1Niw0LjMxNTAwMTM5IDIyLjk0MTU5MzcsNC4yNTgxMzg5OSAyMi42NzE5NDc3LDQuNDE5NTc2NDkgWiIgaWQ9InZpZGVvXzM3XyIgZmlsbD0iIzRENEQ0RCI+PC9wYXRoPgogICAgICAgIDwvZz4KICAgIDwvZz4KPC9zdmc+';
+
+/**
+ * Sensor attribute video sensor block should report.
+ * @readonly
+ * @enum {string}
+ */
+const SensingAttribute = {
+    /** The amount of motion. */
+    MOTION: 'motion',
+
+    /** The direction of the motion. */
+    DIRECTION: 'direction'
+};
+
+/**
+ * Subject video sensor block should report for.
+ * @readonly
+ * @enum {string}
+ */
+const SensingSubject = {
+    /** The sensor traits of the whole stage. */
+    STAGE: 'Stage',
+
+    /** The senosr traits of the area overlapped by this sprite. */
+    SPRITE: 'this sprite'
+};
+
+/**
+ * States the video sensing activity can be set to.
+ * @readonly
+ * @enum {string}
+ */
+const VideoState = {
+    /** Video turned off. */
+    OFF: 'off',
+
+    /** Video turned on with default y axis mirroring. */
+    ON: 'on',
+
+    /** Video turned on without default y axis mirroring. */
+    ON_FLIPPED: 'on-flipped'
+};
+
+const EXTENSION_ID = 'objectDetecting';
 
 /**
  * Class for the motion-related blocks in Scratch 3.0
@@ -32,26 +80,16 @@ const blockIconURI =
  * @constructor
  */
 class Scratch3objectDetectingBlocks {
-    constructor(runtime) {
+    constructor (runtime) {
         /**
          * The runtime instantiating this block package.
          * @type {Runtime}
          */
         this.runtime = runtime;
 
-        /**
-         * The motion detection algoritm used to power the motion amount and
-         * direction values.
-         * @type {VideoMotion}
-         */
-        this.detect = new VideoMotion();
-
-        /**
-         * The last millisecond epoch timestamp that the video stream was
-         * analyzed.
-         * @type {number}
-         */
-        this._lastUpdate = null;
+        this.runtime.registerPeripheralExtension(EXTENSION_ID, this);
+        this.runtime.connectPeripheral(EXTENSION_ID, 0);
+        this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
 
         /**
          * A flag to determine if this extension has been installed in a project.
@@ -61,16 +99,8 @@ class Scratch3objectDetectingBlocks {
         this.firstInstall = true;
 
         if (this.runtime.ioDevices) {
-            // Configure the video device with values from globally stored locations.
-            this.runtime.on(
-                Runtime.PROJECT_LOADED,
-                this.updateVideoDisplay.bind(this)
-            );
-
-            // Clear target motion state values when the project starts.
+            this.runtime.on(Runtime.PROJECT_LOADED, this.projectStarted.bind(this));
             this.runtime.on(Runtime.PROJECT_RUN_START, this.reset.bind(this));
-
-            // Kick off looping the analysis logic.
             this._loop();
         }
     }
@@ -80,7 +110,7 @@ class Scratch3objectDetectingBlocks {
      * is analyzed.
      * @type {number}
      */
-    static get INTERVAL() {
+    static get INTERVAL () {
         return 33;
     }
 
@@ -89,7 +119,7 @@ class Scratch3objectDetectingBlocks {
      * sample canvas.
      * @type {Array.<number>}
      */
-    static get DIMENSIONS() {
+    static get DIMENSIONS () {
         return [480, 360];
     }
 
@@ -97,162 +127,131 @@ class Scratch3objectDetectingBlocks {
      * The key to load & store a target's motion-related state.
      * @type {string}
      */
-    static get STATE_KEY() {
-        return "Scratch.objectDetecting";
+    static get STATE_KEY () {
+        return 'Scratch.objectDetecting';
     }
 
     /**
      * The default motion-related state, to be used when a target has no existing motion state.
      * @type {MotionState}
      */
-    static get DEFAULT_MOTION_STATE() {
+    static get DEFAULT_MOTION_STATE () {
         return {
             motionFrameNumber: 0,
             motionAmount: 0,
-            motionDirection: 0,
+            motionDirection: 0
         };
     }
 
     /**
-     * An array of info on video state options for the "turn video [STATE]" block.
-     * @type {object[]}
-     * @param {string} name - the translatable name to display in the video state menu
-     * @param {string} value - the serializable value stored in the block
+     * The transparency setting of the video preview stored in a value
+     * accessible by any object connected to the virtual machine.
+     * @type {number}
      */
-    get VIDEO_STATE_INFO() {
-        return [
-            {
-                name: formatMessage({
-                    id: "videoSensing.off",
-                    default: "off",
-                    description: 'Option for the "turn video [STATE]" block',
-                }),
-                value: VideoState.OFF,
-            },
-            {
-                name: formatMessage({
-                    id: "videoSensing.on",
-                    default: "on",
-                    description: 'Option for the "turn video [STATE]" block',
-                }),
-                value: VideoState.ON,
-            },
-            {
-                name: formatMessage({
-                    id: "videoSensing.onFlipped",
-                    default: "on flipped",
-                    description:
-                        'Option for the "turn video [STATE]" block that causes the video to be flipped' +
-                        " horizontally (reversed as in a mirror)",
-                }),
-                value: VideoState.ON_FLIPPED,
-            },
-        ];
+    get globalVideoTransparency () {
+        const stage = this.runtime.getTargetForStage();
+        if (stage) {
+            return stage.videoTransparency;
+        }
+        return 50;
     }
 
-    get INFO_MENU() {
-        return [
-            {
-                text: formatMessage({
-                    id: "objectDetecting.detectedObjectInfo.accuracy",
-                    default: "Accuracy",
-                    description: "",
-                }),
-                value: "accuracy",
-            },
-            {
-                text: formatMessage({
-                    id: "objectDetecting.detectedObjectInfo.x_position",
-                    default: "X Position",
-                    description: "",
-                }),
-                value: "x_position",
-            },
-            {
-                text: formatMessage({
-                    id: "objectDetecting.detectedObjectInfo.y_position",
-                    default: "Y Position",
-                    description: "",
-                }),
-                value: "y_position",
-            },
-            {
-                text: formatMessage({
-                    id: "objectDetecting.detectedObjectInfo.x_size",
-                    default: "X Size",
-                    description: "",
-                }),
-                value: "x_size",
-            },
-            {
-                text: formatMessage({
-                    id: "objectDetecting.detectedObjectInfo.y_size",
-                    default: "Y Size",
-                    description: "",
-                }),
-                value: "y_size",
-            },
-        ];
+    set globalVideoTransparency (transparency) {
+        const stage = this.runtime.getTargetForStage();
+        if (stage) {
+            stage.videoTransparency = transparency;
+        }
+        return transparency;
+    }
+
+    /**
+     * The video state of the video preview stored in a value accessible by any
+     * object connected to the virtual machine.
+     * @type {number}
+     */
+    get globalVideoState () {
+        const stage = this.runtime.getTargetForStage();
+        if (stage) {
+            return stage.videoState;
+        }
+        // Though the default value for the stage is normally 'on', we need to default
+        // to 'off' here to prevent the video device from briefly activating
+        // while waiting for stage targets to be installed that say it should be off
+        return VideoState.OFF;
+    }
+
+    set globalVideoState (state) {
+        const stage = this.runtime.getTargetForStage();
+        if (stage) {
+            stage.videoState = state;
+        }
+        return state;
     }
 
     /**
      * Get the latest values for video transparency and state,
      * and set the video device to use them.
      */
-    updateVideoDisplay() {
-        this.cocossdObjectDetection();
+    projectStarted () {
+        this.setVideoTransparency({
+            TRANSPARENCY: this.globalVideoTransparency
+        });
+        this.videoToggle({
+            VIDEO_STATE: this.globalVideoState
+        });
     }
 
-    /**
-     * Reset the extension's data motion detection data. This will clear out
-     * for example old frames, so the first analyzed frame will not be compared
-     * against a frame from before reset was called.
-     */
-    reset() {
-        this.detect.reset();
-
-        const targets = this.runtime.targets;
-        for (let i = 0; i < targets.length; i++) {
-            const state = targets[i].getCustomState(
-                Scratch3objectDetectingBlocks.STATE_KEY
-            );
-            if (state) {
-                state.motionAmount = 0;
-                state.motionDirection = 0;
-            }
-        }
+    reset () {
     }
 
-    /**
-     * Occasionally step a loop to sample the video, stamp it to the preview
-     * skin, and add a TypedArray copy of the canvas's pixel data.
-     * @private
-     */
-    _loop() {
-        setTimeout(
-            this._loop.bind(this),
-            Math.max(
-                this.runtime.currentStepTime,
-                Scratch3objectDetectingBlocks.INTERVAL
-            )
-        );
+    scan() {
+    }
 
-        // Add frame to detector
-        const time = Date.now();
-        if (this._lastUpdate === null) {
-            this._lastUpdate = time;
+    isConnected() {
+        if(this.prediction != null) {
+            return true;
         }
-        const offset = time - this._lastUpdate;
-        if (offset > Scratch3objectDetectingBlocks.INTERVAL) {
+        else return false;
+    }
+
+    connect() {
+    }
+
+    async _loop () {
+        while (true) {
             const frame = this.runtime.ioDevices.video.getFrame({
                 format: Video.FORMAT_IMAGE_DATA,
-                dimensions: Scratch3objectDetectingBlocks.DIMENSIONS,
+                dimensions: Scratch3objectDetectingBlocks.DIMENSIONS
             });
+            console.log(frame);
+            const time = +new Date();
             if (frame) {
-                this._lastUpdate = time;
-                this.detect.addFrame(frame.data);
+                this.prediction = await this.estimateObjectOnImage(frame);
+                console.log(JSON.stringify(this.prediction, null, 2));
+                if (this.prediction.length > 0) {
+                    this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
+                } else {
+                    this.runtime.emit(this.runtime.constructor.PERIPHERAL_DISCONNECTED);
+                }
             }
+            const estimateThrottleTimeout = (+new Date() - time)/4;
+            await new Promise(r => setTimeout(r, estimateThrottleTimeout));
         }
+    }
+
+    async estimateObjectOnImage(imageElement) {
+        const cocoSsdModel = await this.ensurecocoSsdModelLoaded();
+        const prediction = await cocoSsdModel.detect(imageElement, 2, 0.7);
+        return prediction;
+    }
+
+    async ensurecocoSsdModelLoaded() {
+        if (!this._cocoSsdModel) {
+            console.log("loading start");
+            this._cocoSsdModel = await cocoSsd.load();
+            console.log("loading end");
+        }
+        return this._cocoSsdModel;
     }
 
     /**
@@ -264,7 +263,7 @@ class Scratch3objectDetectingBlocks {
      * @return {array} - An array of objects with text and value properties.
      * @private
      */
-    _buildMenu(info) {
+    _buildMenu (info) {
         return info.map((entry, index) => {
             const obj = {};
             obj.text = entry.name;
@@ -273,65 +272,146 @@ class Scratch3objectDetectingBlocks {
         });
     }
 
+    static get SensingAttribute () {
+        return SensingAttribute;
+    }
+
+    /**
+     * An array of choices of whether a reporter should return the frame's
+     * motion amount or direction.
+     * @type {object[]}
+     * @param {string} name - the translatable name to display in sensor
+     *   attribute menu
+     * @param {string} value - the serializable value of the attribute
+     */
+    get ATTRIBUTE_INFO () {
+        return [
+            {
+                name: formatMessage({
+                    id: 'videoSensing.motion',
+                    default: 'motion',
+                    description: 'Attribute for the "video [ATTRIBUTE] on [SUBJECT]" block'
+                }),
+                value: SensingAttribute.MOTION
+            },
+            {
+                name: formatMessage({
+                    id: 'videoSensing.direction',
+                    default: 'direction',
+                    description: 'Attribute for the "video [ATTRIBUTE] on [SUBJECT]" block'
+                }),
+                value: SensingAttribute.DIRECTION
+            }
+        ];
+    }
+
+    static get SensingSubject () {
+        return SensingSubject;
+    }
+
+    /**
+     * An array of info about the subject choices.
+     * @type {object[]}
+     * @param {string} name - the translatable name to display in the subject menu
+     * @param {string} value - the serializable value of the subject
+     */
+    get SUBJECT_INFO () {
+        return [
+            {
+                name: formatMessage({
+                    id: 'videoSensing.sprite',
+                    default: 'sprite',
+                    description: 'Subject for the "video [ATTRIBUTE] on [SUBJECT]" block'
+                }),
+                value: SensingSubject.SPRITE
+            },
+            {
+                name: formatMessage({
+                    id: 'videoSensing.stage',
+                    default: 'stage',
+                    description: 'Subject for the "video [ATTRIBUTE] on [SUBJECT]" block'
+                }),
+                value: SensingSubject.STAGE
+            }
+        ];
+    }
+
+    /**
+     * States the video sensing activity can be set to.
+     * @readonly
+     * @enum {string}
+     */
+    static get VideoState () {
+        return VideoState;
+    }
+
+    /**
+     * An array of info on video state options for the "turn video [STATE]" block.
+     * @type {object[]}
+     * @param {string} name - the translatable name to display in the video state menu
+     * @param {string} value - the serializable value stored in the block
+     */
+    get VIDEO_STATE_INFO () {
+        return [
+            {
+                name: formatMessage({
+                    id: 'videoSensing.off',
+                    default: 'off',
+                    description: 'Option for the "turn video [STATE]" block'
+                }),
+                value: VideoState.OFF
+            },
+            {
+                name: formatMessage({
+                    id: 'videoSensing.on',
+                    default: 'on',
+                    description: 'Option for the "turn video [STATE]" block'
+                }),
+                value: VideoState.ON
+            },
+            {
+                name: formatMessage({
+                    id: 'videoSensing.onFlipped',
+                    default: 'on flipped',
+                    description: 'Option for the "turn video [STATE]" block that causes the video to be flipped' +
+                        ' horizontally (reversed as in a mirror)'
+                }),
+                value: VideoState.ON_FLIPPED
+            }
+        ];
+    }
+
     /**
      * @returns {object} metadata for this extension and its blocks.
      */
-    getInfo() {
+    getInfo () {
         // Set the video display properties to defaults the first time
         // getInfo is run. This turns on the video device when it is
         // first added to a project, and is overwritten by a PROJECT_LOADED
         // event listener that later calls updateVideoDisplay
         if (this.firstInstall) {
-            this.updateVideoDisplay();
-            this.videoToggle({
-                VIDEO_STATE: VideoState.ON,
-            });
+            this.globalVideoState = VideoState.ON;
+            this.globalVideoTransparency = 50;
+            this.projectStarted();
+            this.firstInstall = false;
+            this._cocoSsdModel = null;
         }
 
         // Return extension definition
         return {
-            id: "objectDetecting",
+            id: EXTENSION_ID,
             name: formatMessage({
-                id: "objectDetecting.categoryName",
-                default: "Object Detecting",
-                description:
-                    "Label for the object detecting extension category",
+                id: 'objectDetecting.categoryName',
+                default: 'Object Detecting',
+                description: 'Label for coco-ssd category'
             }),
+            showStatusButton: true,
             blockIconURI: blockIconURI,
             menuIconURI: menuIconURI,
             blocks: [
                 {
-                    opcode: "videoToggle",
-                    text: formatMessage({
-                        id: "videoSensing.videoToggle",
-                        default: "turn video [VIDEO_STATE]",
-                        description:
-                            "Controls display of the video preview layer",
-                    }),
-                    arguments: {
-                        VIDEO_STATE: {
-                            type: ArgumentType.NUMBER,
-                            menu: "VIDEO_STATE",
-                            defaultValue: VideoState.ON,
-                        },
-                    },
-                },
-                {
-                    opcode: "cocossdObjectDetection",
-                    text: formatMessage({
-                        id: "objectDetecting.cocossdObjectDetection",
-                        default: "COCO-SSD Multi Object Detection",
-                        description: "COCO-SSD Multi Object Detection",
-                    }),
-                    arguments: {},
-                },
-                {
                     opcode: "detectedObjectName",
-                    text: formatMessage({
-                        id: "objectDetecting.detectedObjectName",
-                        default: "[ORDER]th COCO-SSD Detected Object Name",
-                        description: "",
-                    }),
+                    text: '[ORDER]th COCO-SSD Detected Object Name',
                     blockType: BlockType.REPORTER,
                     arguments: {
                         ORDER: {
@@ -342,11 +422,7 @@ class Scratch3objectDetectingBlocks {
                 },
                 {
                     opcode: "detectedObjectInfo",
-                    text: formatMessage({
-                        id: "objectDetecting.detectedObjectInfo",
-                        default: "[ORDER]th COCO-SSD Detected Object [INFO]",
-                        description: "",
-                    }),
+                    text: '[ORDER]th COCO-SSD Detected Object [INFO]',
                     blockType: BlockType.REPORTER,
                     arguments: {
                         ORDER: {
@@ -356,21 +432,97 @@ class Scratch3objectDetectingBlocks {
                         INFO: {
                             type: ArgumentType.STRING,
                             menu: "infomenu",
-                            defaultValue: "Accuracy",
+                            defaultValue: "accuracy",
                         },
                     },
+                },
+                '---',
+                {
+                    opcode: 'videoToggle',
+                    text: formatMessage({
+                        id: 'videoSensing.videoToggle',
+                        default: 'turn video [VIDEO_STATE]',
+                        description: 'Controls display of the video preview layer'
+                    }),
+                    arguments: {
+                        VIDEO_STATE: {
+                            type: ArgumentType.NUMBER,
+                            menu: 'VIDEO_STATE',
+                            defaultValue: VideoState.OFF
+                        }
+                    }
+                },
+                {
+                    opcode: 'setVideoTransparency',
+                    text: formatMessage({
+                        id: 'videoSensing.setVideoTransparency',
+                        default: 'set video transparency to [TRANSPARENCY]',
+                        description: 'Controls transparency of the video preview layer'
+                    }),
+                    arguments: {
+                        TRANSPARENCY: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 50
+                        }
+                    }
                 },
             ],
             menus: {
                 infomenu: {
-                    items: this.INFO_MENU,
+                    acceptReporters: true,
+                    items: [
+                        {text: 'Accuracy', value: 'accuracy'},
+                        {text: 'X Position', value: 'x_position'},
+                        {text: 'Y Position', value: 'y_position'},
+                        {text: 'X Size', value: 'x_size'},
+                        {text: 'Y Size', value: 'y_size'},
+                    ]
                 },
                 VIDEO_STATE: {
                     acceptReporters: true,
-                    items: this._buildMenu(this.VIDEO_STATE_INFO),
-                },
-            },
+                    items: this._buildMenu(this.VIDEO_STATE_INFO)
+                }
+            }
         };
+    }
+
+    /**
+     * @param {object} args - the block arguments
+     * @property {number} args.ORDER
+     *
+     * @return {string} detected object name
+     */
+    detectedObjectName(args) {
+        if (this.prediction) {
+            console.log(this.prediction[args.ORDER - 1].class);
+            return this.prediction[args.ORDER - 1].class;
+        }
+        return "NOT EXIST";
+    }
+
+    /**
+     * @param {object} args - the block arguments
+     * @property {number} args.ORDER
+     * @property {string} args.INFO
+     *
+     * @return {number} detected object info
+     */
+    detectedObjectInfo(args) {
+        console.log(this.prediction);
+        if (this.prediction) {
+            if (args.INFO == "accuracy") {
+                return this.prediction[args.ORDER - 1].score;
+            } else if (args.INFO == "x_position") {
+                return this.prediction[args.ORDER - 1].bbox[0];
+            } else if (args.INFO == "y_position") {
+                return this.prediction[args.ORDER - 1].bbox[1];
+            } else if (args.INFO == "x_size") {
+                return this.prediction[args.ORDER - 1].bbox[2];
+            } else if (args.INFO == "y_size") {
+                return this.prediction[args.ORDER - 1].bbox[3];
+            }
+        }
+        return 0;
     }
 
     /**
@@ -379,7 +531,7 @@ class Scratch3objectDetectingBlocks {
      * @param {object} args - the block arguments
      * @param {VideoState} args.VIDEO_STATE - the video state to set the device to
      */
-    videoToggle(args) {
+    videoToggle (args) {
         const state = args.VIDEO_STATE;
         this.globalVideoState = state;
         if (state === VideoState.OFF) {
@@ -392,31 +544,16 @@ class Scratch3objectDetectingBlocks {
     }
 
     /**
-     *
-     */
-    cocossdObjectDetection() {
-        this.runtime.ioDevices.video.cocossdPredict();
-    }
-
-    /**
+     * A scratch command block handle that configures the video preview's
+     * transparency from passed arguments.
      * @param {object} args - the block arguments
-     * @property {number} args.ORDER
-     *
-     * @return {string} detected object name
+     * @param {number} args.TRANSPARENCY - the transparency to set the video
+     *   preview to
      */
-    detectedObjectName(args) {
-        return this.runtime.ioDevices.video.cocossdName(args.ORDER, args.INFO);
-    }
-
-    /**
-     * @param {object} args - the block arguments
-     * @property {number} args.ORDER
-     * @property {string} args.INFO
-     *
-     * @return {number} detected object info
-     */
-    detectedObjectInfo(args) {
-        return this.runtime.ioDevices.video.cocossdInfo(args.ORDER, args.INFO);
+    setVideoTransparency (args) {
+        const transparency = Cast.toNumber(args.TRANSPARENCY);
+        this.globalVideoTransparency = transparency;
+        this.runtime.ioDevices.video.setPreviewGhost(transparency);
     }
 }
 

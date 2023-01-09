@@ -293,60 +293,6 @@ class VideoProvider {
         }
         return workspace;
     }
-
-    runCocossd() {
-        Promise.all([cocoSsd.load()])
-            .then((results) => {
-                const model = results[0];
-                return model.detect(this._video);
-            })
-            .then((predictions) => {
-                this._prediction = predictions;
-                console.log(JSON.stringify(this._prediction, null, 2));
-            });
-    }
-
-    /**
-     * Return cocossd prediction name
-     *
-     * @param {number} order
-     *
-     * @return {string} detected object name
-     */
-    nameCocoSsd(order) {
-        if (this._prediction) {
-            console.log(this._prediction[order - 1].class);
-            return this._prediction[order - 1].class;
-        }
-        console.log(this._prediction[order - 1].class);
-        return "NOT EXIST";
-    }
-
-    /**
-     * Return cocossd prediction info
-     *
-     * @param {number} order
-     * @param {string} info
-     *
-     * @return {number} detected object info
-     */
-    infoCocoSsd(order, info) {
-        if (this._prediction) {
-            if (info == "accuracy") {
-                console.log(this._prediction[order - 1].score);
-                return this._prediction[order - 1].score;
-            } else if (info == "x_position") {
-                return this._prediction[order - 1].bbox[0];
-            } else if (info == "y_position") {
-                return this._prediction[order - 1].bbox[1];
-            } else if (info == "x_size") {
-                return this._prediction[order - 1].bbox[2];
-            } else if (info == "y_size") {
-                return this._prediction[order - 1].bbox[3];
-            }
-        }
-        return 0;
-    }
 }
 
 export default VideoProvider;

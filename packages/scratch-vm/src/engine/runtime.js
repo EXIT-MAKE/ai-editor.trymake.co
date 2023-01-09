@@ -1515,7 +1515,9 @@ class Runtime extends EventEmitter {
      * @param {object} extension - the extension to register.
      */
     registerPeripheralExtension (extensionId, extension) {
+        console.log(extensionId);
         this.peripheralExtensions[extensionId] = extension;
+        console.log(this.peripheralExtensions[extensionId]);
     }
 
     /**

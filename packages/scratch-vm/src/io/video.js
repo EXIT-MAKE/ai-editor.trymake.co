@@ -210,42 +210,6 @@ class Video {
         // from overriding forceTransparentPreview
         this.setPreviewGhost(this._ghost);
     }
-
-    /**
-     * COCO-SSD Object Detection Console Log function
-     */
-    cocossdPredict() {
-        if (this.provider) {
-            this.provider.runCocossd();
-        }
-    }
-
-    /**
-     * Return cocossd prediction info
-     *
-     * @param {number} order
-     *
-     * @return {string} detected object name
-     */
-    cocossdName(order) {
-        if (this.provider) {
-            return this.provider.nameCocoSsd(order);
-        }
-    }
-
-    /**
-     * Return cocossd prediction info
-     *
-     * @param {number} order
-     * @param {string} info
-     *
-     * @return {number} detected object info
-     */
-    cocossdInfo(order, info) {
-        if (this.provider) {
-            return this.provider.infoCocoSsd(order, info);
-        }
-    }
 }
 
 
