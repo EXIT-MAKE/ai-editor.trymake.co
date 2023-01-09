@@ -516,9 +516,9 @@ class Scratch3objectDetectingBlocks {
                 if (args.INFO == "accuracy") {
                     return this.prediction[args.ORDER - 1].score;
                 } else if (args.INFO == "x_position") {
-                    return this.prediction[args.ORDER - 1].bbox[0];
+                    return this.prediction[args.ORDER - 1].bbox[0] - (Video.DIMENSIONS[0] / 2);
                 } else if (args.INFO == "y_position") {
-                    return this.prediction[args.ORDER - 1].bbox[1];
+                    return (Video.DIMENSIONS[1] / 2) - this.prediction[args.ORDER - 1].bbox[1];
                 } else if (args.INFO == "x_size") {
                     return this.prediction[args.ORDER - 1].bbox[2];
                 } else if (args.INFO == "y_size") {
