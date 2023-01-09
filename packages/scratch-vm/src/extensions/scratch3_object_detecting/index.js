@@ -494,8 +494,10 @@ class Scratch3objectDetectingBlocks {
      */
     detectedObjectName(args) {
         if (this.prediction) {
-            console.log(this.prediction[args.ORDER - 1].class);
-            return this.prediction[args.ORDER - 1].class;
+            if (this.prediction[args.ORDER - 1]) {
+                console.log(this.prediction[args.ORDER - 1].class);
+                return this.prediction[args.ORDER - 1].class;
+            }
         }
         return "NOT EXIST";
     }
@@ -510,17 +512,20 @@ class Scratch3objectDetectingBlocks {
     detectedObjectInfo(args) {
         console.log(this.prediction);
         if (this.prediction) {
-            if (args.INFO == "accuracy") {
-                return this.prediction[args.ORDER - 1].score;
-            } else if (args.INFO == "x_position") {
-                return this.prediction[args.ORDER - 1].bbox[0];
-            } else if (args.INFO == "y_position") {
-                return this.prediction[args.ORDER - 1].bbox[1];
-            } else if (args.INFO == "x_size") {
-                return this.prediction[args.ORDER - 1].bbox[2];
-            } else if (args.INFO == "y_size") {
-                return this.prediction[args.ORDER - 1].bbox[3];
+            if (this.prediction[args.ORDER - 1]) {
+                if (args.INFO == "accuracy") {
+                    return this.prediction[args.ORDER - 1].score;
+                } else if (args.INFO == "x_position") {
+                    return this.prediction[args.ORDER - 1].bbox[0];
+                } else if (args.INFO == "y_position") {
+                    return this.prediction[args.ORDER - 1].bbox[1];
+                } else if (args.INFO == "x_size") {
+                    return this.prediction[args.ORDER - 1].bbox[2];
+                } else if (args.INFO == "y_size") {
+                    return this.prediction[args.ORDER - 1].bbox[3];
+                }
             }
+            
         }
         return 0;
     }
