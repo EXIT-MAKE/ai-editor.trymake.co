@@ -115,6 +115,20 @@ export default [
         featured: true
     },
     {
+        name: "Text Recognition",
+        extensionId: 'textRecognition',
+        iconURL: videoSensingIconURL,
+        insetIconURL: videoSensingInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="Text Recognition"
+                description=""
+                id="gui.extension.text_recognition.description"
+            />
+        ),
+        featured: true
+    },
+    {
         name: "Object Detecting",
         extensionId: 'objectDetecting',
         iconURL: videoSensingIconURL,
