@@ -10,9 +10,6 @@ const Video = require('../../io/video');
 require("@tensorflow/tfjs-backend-cpu");
 require("@tensorflow/tfjs-backend-webgl");
 
-//const {TesseractWorker} = require('tesseract.js');
-//const worker = new TesseractWorker();
-
 const { createWorker } = require('tesseract.js');
 
 const tf = require("@tensorflow/tfjs");
