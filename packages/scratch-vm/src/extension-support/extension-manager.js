@@ -41,6 +41,7 @@ const builtinExtensions = {
     videoSensing: () => require('../extensions/scratch3_video_sensing'),
     objectDetecting: () => require('../extensions/scratch3_object_detecting'),
     textRecognition: () => require('../extensions/scratch3_text_recognition'),
+    faceRecognition: () => require('../extensions/scratch3_face_recognition'),
     ev3: () => require('../extensions/scratch3_ev3'),
     makeymakey: () => require('../extensions/scratch3_makeymakey'),
     boost: () => require('../extensions/scratch3_boost'),

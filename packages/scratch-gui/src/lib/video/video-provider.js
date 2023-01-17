@@ -25,7 +25,7 @@ class VideoProvider {
 
         /**
          * DOM Video element
-         * @private
+         * @public
          */
         this._video = null;
 

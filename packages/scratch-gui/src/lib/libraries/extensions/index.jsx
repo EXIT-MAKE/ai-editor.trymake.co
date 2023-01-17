@@ -143,6 +143,20 @@ export default [
         featured: true
     },
     {
+        name: "Face Recognition",
+        extensionId: 'faceRecognition',
+        iconURL: videoSensingIconURL,
+        insetIconURL: videoSensingInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="Face Recognition"
+                description=""
+                id="gui.extension.face_recognition.description"
+            />
+        ),
+        featured: true
+    },
+    {
         name: "Hand Sensing",
         extensionId: 'poseHand',
         iconURL: poseHandBlocksIconURL,
