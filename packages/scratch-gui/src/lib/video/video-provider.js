@@ -1,10 +1,13 @@
 import {requestVideoStream, requestDisableVideo} from './camera.js';
 import log from '../log.js';
 
+const tf = require("@tensorflow/tfjs");
+const { image } = require("@tensorflow/tfjs");
+const { browserLocalStorage } = require("@tensorflow/tfjs-core/dist/io/local_storage");
+const { isDeleteExpression } = require("typescript");
 require("@tensorflow/tfjs-backend-cpu");
 require("@tensorflow/tfjs-backend-webgl");
-const cocoSsd = require("@tensorflow-models/coco-ssd");
-const tf = require("@tensorflow/tfjs");
+const faceapi = require('face-api.js')
 
 /**
  * Video Manager for video extensions.
@@ -292,6 +295,59 @@ class VideoProvider {
             this._workspace.push(workspace);
         }
         return workspace;
+    }
+
+    /**
+     * @param {string} name
+     * @param {number} num
+     */
+    async addPersonProvider (name, num) {
+        console.log("Loading FaceAPI models");
+        await faceapi.nets.ssdMobilenetv1.loadFromUri('static/face_recog_models');
+        await faceapi.nets.tinyFaceDetector.loadFromUri('static/face_recog_models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('static/face_recog_models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('static/face_recog_models');
+
+        let descriptors = [];
+        for(let i=0; i<num; i++) {
+            if(this._video) {
+                const descriptor = await faceapi.computeFaceDescriptor(this._video);
+                descriptors.push(descriptor);
+                console.log(descriptor);
+            }
+        }
+
+        const labeledDescriptor = new faceapi.LabeledFaceDescriptors(args.NAME, descriptors);
+        this.labeledDescriptors.push(labeledDescriptor);
+        console.log(this.labeledDescriptors);
+        this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors);
+    }
+
+    deletePersonProvider() {
+        this.labeledDescriptors = [];
+        this.faceMatcher = null;
+    }
+
+    /**
+     * @returns {string}
+     */
+    async findPersonNameProvider() {
+        const name = "NOT EXIST"
+
+        if (this._video) {
+            const results = await faceapi
+            .detectAllFaces(this._video)
+            .withFaceLandmarks()
+            .withFaceDescriptors()
+
+            results.forEach(fd => {
+                const bestMatch = this.faceMatcher.findBestMatch(fd.descriptor)
+                name = bestMatch.toString();
+                console.log(bestMatch.toString())
+            })
+        }
+
+        return name;
     }
 }
 

@@ -10,6 +10,10 @@ class Video {
          * enables the video feed
          * @property {Function} disableVideo - Turns off the video feed
          * @property {Function} getFrame - Return frame data from the video feed in
+         * 
+         * @property {Function} addPersonProvider
+         * @property {Function} deletePersonProvider
+         * @property {Function} findPersonNameProvider
          * specified dimensions, format, and mirroring.
          */
         this.provider = null;
@@ -209,6 +213,25 @@ class Video {
         // flag and override the current ghost. The complexity is to prevent blocks
         // from overriding forceTransparentPreview
         this.setPreviewGhost(this._ghost);
+    }
+
+    /**
+     * @param {string} name Name of the person
+     * @param {number} num Number to capture the person
+     */
+    addPersonVideo (name, num) {
+        this.provider.addPersonProvider(name, num);
+    }
+
+    deletePersonVideo () {
+        this.provider.deletePersonProvider();
+    }
+
+    /**
+     * @return {string}
+     */
+    findPersonNameVideo () {
+        return this.provider.findPersonNameProvider();
     }
 }
 

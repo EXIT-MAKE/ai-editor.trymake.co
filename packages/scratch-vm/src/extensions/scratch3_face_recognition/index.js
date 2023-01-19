@@ -9,8 +9,13 @@ const Video = require('../../io/video');
 
 require("@tensorflow/tfjs-backend-cpu");
 require("@tensorflow/tfjs-backend-webgl");
+//require("@tensorflow/tfjs-node");
 
-const faceapi = require('face-api.js')
+const path = require("path");
+const faceapi = require('face-api.js');
+const weightMap = "./ssdMobilenetv1/extractParamsFromWeigthMap";
+//const { Canvas, Image, ImageData } = require('canvas');
+//faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
 const tf = require("@tensorflow/tfjs");
 const { image } = require("@tensorflow/tfjs");
@@ -222,6 +227,28 @@ class Scratch3faceRecognitionBlocks {
     connect() {
     }
 
+    async imagetotensor(file) {
+        const decoded = tf.node.decodeImage(file);
+        const casted = decoded.toFloat();
+        const result = casted.expandDims(0);
+        decoded.dispose();
+        casted.dispose();
+        return result;
+    }
+
+    async _init() {
+        console.log("FaceAPI single-process test");
+        await faceapi.tf.enableProdMode();
+        await faceapi.tf.ENV.set("DEBUG", false);
+        await faceapi.tf.ready();
+
+        //console.log("Loading FaceAPI models");
+        //await faceapi.nets.tinyFaceDetector.loadFromWeightMap('./models');
+        //await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
+        //await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
+        //await faceapi.nets.ssdMobilenetv1.loadFromUri('./face_recog_models');
+    }
+
     async _loop () {
         while (true) {
             //await faceapi.nets.ssdMobilenetv1.loadFromDisk(path.join(__dirname, 'models'));
@@ -380,6 +407,7 @@ class Scratch3faceRecognitionBlocks {
             this._language = 'eng';
             this.runtime.ioDevices.video.mirror = false;
             this.labeledDescriptors = [];
+            this._init();
         }
 
         // Return extension definition
@@ -417,19 +445,10 @@ class Scratch3faceRecognitionBlocks {
                     },
                 },
                 {
-                    opcode: "findPerson",
-                    text: 'Person [NAME] [INFO]',
+                    opcode: "findPersonName",
+                    text: 'Detected Person Name',
                     blockType: BlockType.REPORTER,
                     arguments: {
-                        NAME: {
-                            type: ArgumentType.STRING,
-                            defaultValue: 'Mike',
-                        },
-                        INFO: {
-                            type: ArgumentType.STRING,
-                            menu: 'infomenu',
-                            defaultValue: '10',
-                        },
                     },
                 },
                 '---',
@@ -486,35 +505,40 @@ class Scratch3faceRecognitionBlocks {
      * @property {number} args.NUM
      */
     async addPerson(args) {
+        ///**
+        this.runtime.ioDevices.video.addPersonVideo(args.NAME, args.NUM);
+        //*/
+        /**
         let descriptors = [];
         for(let i=0; i<args.NUM; i++) {
             if(this._frame) {
-                const descriptor = await faceapi.computeFaceDescriptor(this._frame);
+                const tensor = await tf.browser.fromPixels(this._frame);
+                const descriptor = await faceapi.computeFaceDescriptor(tensor);
                 descriptors.push(descriptor);
+                console.log(i);
                 console.log(descriptor);
             }
         }
 
         const labeledDescriptor = new faceapi.LabeledFaceDescriptors(args.NAME, descriptors);
         this.labeledDescriptors.push(labeledDescriptor);
-        console.log(this.labeledDescriptors);
+        //console.log(this.labeledDescriptors);
         this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors)
+        */
     }
 
     deletePerson() {
-        this.labeledDescriptors = [];
+        this.runtime.ioDevices.video.deletePersonVideo();
+        //this.labeledDescriptors = [];
     }
 
     /**
-     * @param {object} args - the block arguments
-     * @property {string} args.NAME
-     * @property {string} args.INFO
-     * 
      * @returns {string}
-     * 
      */
-    async findPerson() {
+    async findPersonName() {
+        this.prediction = this.runtime.ioDevices.video.findPersonNameVideo();
 
+        /**
         this.predction = null;
 
         if (this._frame) {
@@ -529,6 +553,7 @@ class Scratch3faceRecognitionBlocks {
                 console.log(bestMatch.toString())
             })
         }
+        */
 
         return this.predction;
     }
