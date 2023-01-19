@@ -48,6 +48,12 @@ class VideoProvider {
          * Stores prediction
          */
         this._prediction = [];
+
+        /**
+         * Stores laveledDescriptors
+         */
+        this.labeledDescriptors = [];
+        this.faceMatcher = null;
     }
 
     static get FORMAT_IMAGE_DATA () {
@@ -297,31 +303,69 @@ class VideoProvider {
         return workspace;
     }
 
+    async repeatCapture(num) {
+        let descriptors = [];
+        for(let i=1; i<=num;i++) {
+            await descriptors.push(this.delayCapture(i));
+        }
+        name = "hello";
+        await this.makeMatcher(descriptors, name);
+    }
+
+
+    async delayCapture (i) {
+        const timeout = setTimeout(async () => { 
+            const descriptor = await faceapi.computeFaceDescriptor(this._video);
+            console.log(i + " CAPTURE TIME : " + new Date());
+            console.log(descriptor);
+            clearImmediate(timeout);
+            return descriptor;
+        }, 1000*i);
+
+        /**
+        let descriptors = [];
+        let i = 1;
+        const inverval = setInterval(async () => {
+            const descriptor = await faceapi.computeFaceDescriptor(this._video);
+            console.log(i + " CAPTURE TIME : " + new Date());
+            console.log(descriptor);
+            descriptors.push(descriptor);
+            i++;
+            if(i > num) {
+                clearInterval(interval);
+                return descriptors;
+            }
+        }, 1000)
+        */
+    }
+
+    async makeMatcher (descriptors, name) {
+        console.log("Running");
+        const labeledDescriptor = new faceapi.LabeledFaceDescriptors(name, descriptors);
+        this.labeledDescriptors.push(labeledDescriptor);
+        console.log(this.labeledDescriptors);
+        this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors);
+    }
+       
+
     /**
      * @param {string} name
      * @param {number} num
      */
     async addPersonProvider (name, num) {
-        console.log("Loading FaceAPI models");
+        console.log("Loading FaceAPI ssdMobilenetv1 models");
         await faceapi.nets.ssdMobilenetv1.loadFromUri('static/face_recog_models');
+        console.log("Loading FaceAPI tinyFaceDetector models");
         await faceapi.nets.tinyFaceDetector.loadFromUri('static/face_recog_models');
+        console.log("Loading FaceAPI faceLandmark68Net models");
         await faceapi.nets.faceLandmark68Net.loadFromUri('static/face_recog_models');
+        console.log("Loading FaceAPI faceRecognitionNet models");
         await faceapi.nets.faceRecognitionNet.loadFromUri('static/face_recog_models');
 
-        let descriptors = [];
-        for(let i=0; i<num; i++) {
-            if(this._video) {
-                const descriptor = await faceapi.computeFaceDescriptor(this._video);
-                descriptors.push(descriptor);
-                console.log(descriptor);
-            }
-        }
-
-        const labeledDescriptor = new faceapi.LabeledFaceDescriptors(args.NAME, descriptors);
-        this.labeledDescriptors.push(labeledDescriptor);
-        console.log(this.labeledDescriptors);
-        this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors);
+        const descriptors = await this.repeatCapture(num);
+        
     }
+
 
     deletePersonProvider() {
         this.labeledDescriptors = [];
@@ -332,7 +376,7 @@ class VideoProvider {
      * @returns {string}
      */
     async findPersonNameProvider() {
-        const name = "NOT EXIST"
+        let name = "NOT EXIST"
 
         if (this._video) {
             const results = await faceapi

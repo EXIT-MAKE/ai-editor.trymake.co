@@ -21,6 +21,10 @@ declare class Video {
      * enables the video feed
      * @property {Function} disableVideo - Turns off the video feed
      * @property {Function} getFrame - Return frame data from the video feed in
+     * 
+     * @property {Function} addPersonVideo
+     * @property {Function} deletePersonVideo
+     * @property {Function} findPersonNameVideo
      * specified dimensions, format, and mirroring.
      */
     provider: any;
