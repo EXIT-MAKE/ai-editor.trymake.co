@@ -241,12 +241,6 @@ class Scratch3faceRecognitionBlocks {
         await faceapi.tf.enableProdMode();
         await faceapi.tf.ENV.set("DEBUG", false);
         await faceapi.tf.ready();
-
-        //console.log("Loading FaceAPI models");
-        //await faceapi.nets.tinyFaceDetector.loadFromWeightMap('./models');
-        //await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
-        //await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
-        //await faceapi.nets.ssdMobilenetv1.loadFromUri('./face_recog_models');
     }
 
     async _loop () {
@@ -258,7 +252,7 @@ class Scratch3faceRecognitionBlocks {
                 dimensions: Scratch3faceRecognitionBlocks.DIMENSIONS
             });
             const time = +new Date();
-            const estimateThrottleTimeout = (+new Date() - time)/4;
+            const estimateThrottleTimeout = 1000;
             await new Promise(r => setTimeout(r, estimateThrottleTimeout));
         }
     }

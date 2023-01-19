@@ -307,9 +307,8 @@ class VideoProvider {
         let descriptors = [];
         for(let i=1; i<=num;i++) {
             await descriptors.push(this.delayCapture(i));
-        }
-        name = "hello";
-        await this.makeMatcher(descriptors, name);
+        } 
+        return descriptors;
     }
 
 
@@ -332,7 +331,6 @@ class VideoProvider {
             descriptors.push(descriptor);
             i++;
             if(i > num) {
-                clearInterval(interval);
                 return descriptors;
             }
         }, 1000)
@@ -362,14 +360,30 @@ class VideoProvider {
         console.log("Loading FaceAPI faceRecognitionNet models");
         await faceapi.nets.faceRecognitionNet.loadFromUri('static/face_recog_models');
 
-        const descriptors = await this.repeatCapture(num);
-        
+        let descriptors = [];
+        for(let i=1; i<=num;i++) {
+            const timeout = setTimeout(async () => { 
+                const descriptor = await faceapi.computeFaceDescriptor(this._video);
+                console.log(i + " CAPTURE TIME : " + new Date());
+                console.log(descriptor);
+                descriptors.push(descriptor);
+                if(i == num) {
+                    console.log("Running");
+                    const labeledDescriptor = new faceapi.LabeledFaceDescriptors(name, descriptors);
+                    this.labeledDescriptors.push(labeledDescriptor);
+                    console.log(this.labeledDescriptors);
+                    this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors);
+                    
+                }
+            }, 1000*i);            
+        } 
     }
 
 
     deletePersonProvider() {
         this.labeledDescriptors = [];
         this.faceMatcher = null;
+        console.log("Delete Person List Complete");
     }
 
     /**
