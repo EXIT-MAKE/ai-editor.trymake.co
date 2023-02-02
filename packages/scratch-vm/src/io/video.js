@@ -215,23 +215,29 @@ class Video {
         this.setPreviewGhost(this._ghost);
     }
 
+    async loadFaceApiModelVideo() {
+        await this.provider.loadFaceApiModelProvider();
+    }
+
     /**
      * @param {string} name Name of the person
      * @param {number} num Number to capture the person
      */
-    addPersonVideo (name, num) {
-        this.provider.addPersonProvider(name, num);
+    async addPersonVideo (name, num) {
+        await this.provider.addPersonProvider(name, num);
     }
 
-    deletePersonVideo () {
-        this.provider.deletePersonProvider();
+    async deletePersonVideo () {
+        await this.provider.deletePersonProvider();
     }
 
     /**
      * @return {string}
      */
-    findPersonNameVideo () {
-        return this.provider.findPersonNameProvider();
+    async findPersonNameVideo () {
+        const personNameData = await this.provider.findPersonNameProvider();
+        //console.log(personNameData);
+        return personNameData;
     }
 }
 

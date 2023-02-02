@@ -344,13 +344,8 @@ class VideoProvider {
         console.log(this.labeledDescriptors);
         this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors);
     }
-       
-
-    /**
-     * @param {string} name
-     * @param {number} num
-     */
-    async addPersonProvider (name, num) {
+    
+    async loadFaceApiModelProvider() {
         console.log("Loading FaceAPI ssdMobilenetv1 models");
         await faceapi.nets.ssdMobilenetv1.loadFromUri('static/face_recog_models');
         console.log("Loading FaceAPI tinyFaceDetector models");
@@ -359,11 +354,22 @@ class VideoProvider {
         await faceapi.nets.faceLandmark68Net.loadFromUri('static/face_recog_models');
         console.log("Loading FaceAPI faceRecognitionNet models");
         await faceapi.nets.faceRecognitionNet.loadFromUri('static/face_recog_models');
+    }
 
+    /**
+     * @param {string} name
+     * @param {number} num
+     */
+    async addPersonProvider (name, num) {
         let descriptors = [];
         for(let i=1; i<=num;i++) {
             const timeout = setTimeout(async () => { 
-                const descriptor = await faceapi.computeFaceDescriptor(this._video);
+                const detect_result = await faceapi
+                    .detectAllFaces(this._video)
+                    .withFaceLandmarks()
+                    .withFaceDescriptors();
+                const descriptor = detect_result[0].descriptor;
+                //const descriptor = await faceapi.computeFaceDescriptor();
                 console.log(i + " CAPTURE TIME : " + new Date());
                 console.log(descriptor);
                 descriptors.push(descriptor);
@@ -373,7 +379,6 @@ class VideoProvider {
                     this.labeledDescriptors.push(labeledDescriptor);
                     console.log(this.labeledDescriptors);
                     this.faceMatcher = new faceapi.FaceMatcher(this.labeledDescriptors);
-                    
                 }
             }, 1000*i);            
         } 
@@ -390,6 +395,15 @@ class VideoProvider {
      * @returns {string}
      */
     async findPersonNameProvider() {
+        let name = await this.findPersonNameProviderTemp();
+        //console.log(name);
+        return name;
+    }
+
+    /**
+     * @returns {string}
+     */
+    async findPersonNameProviderTemp() {
         let name = "NOT EXIST"
 
         if (this._video) {

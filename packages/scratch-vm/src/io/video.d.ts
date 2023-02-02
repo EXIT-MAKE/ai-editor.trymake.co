@@ -22,6 +22,7 @@ declare class Video {
      * @property {Function} disableVideo - Turns off the video feed
      * @property {Function} getFrame - Return frame data from the video feed in
      * 
+     * @property {Function} loadFaceApiModelVideo
      * @property {Function} addPersonVideo
      * @property {Function} deletePersonVideo
      * @property {Function} findPersonNameVideo

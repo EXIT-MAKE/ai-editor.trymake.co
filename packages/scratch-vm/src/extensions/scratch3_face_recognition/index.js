@@ -241,6 +241,7 @@ class Scratch3faceRecognitionBlocks {
         await faceapi.tf.enableProdMode();
         await faceapi.tf.ENV.set("DEBUG", false);
         await faceapi.tf.ready();
+        await this.runtime.ioDevices.video.loadFaceApiModelVideo();
     }
 
     async _loop () {
@@ -498,10 +499,9 @@ class Scratch3faceRecognitionBlocks {
      * @property {string} args.NAME
      * @property {number} args.NUM
      */
-    async addPerson(args) {
-        ///**
-        this.runtime.ioDevices.video.addPersonVideo(args.NAME, args.NUM);
-        //*/
+    async addPerson(args, util) {
+        await this.runtime.ioDevices.video.addPersonVideo(args.NAME, args.NUM);
+        util.target.setSay('say', 'ImageData Capture Complete');
         /**
         let descriptors = [];
         for(let i=0; i<args.NUM; i++) {
@@ -521,35 +521,18 @@ class Scratch3faceRecognitionBlocks {
         */
     }
 
-    deletePerson() {
-        this.runtime.ioDevices.video.deletePersonVideo();
-        //this.labeledDescriptors = [];
+    async deletePerson() {
+        await this.runtime.ioDevices.video.deletePersonVideo();
     }
 
     /**
      * @returns {string}
      */
     async findPersonName() {
-        this.prediction = this.runtime.ioDevices.video.findPersonNameVideo();
-
-        /**
-        this.predction = null;
-
-        if (this._frame) {
-            const results = await faceapi
-            .detectAllFaces(this._frame)
-            .withFaceLandmarks()
-            .withFaceDescriptors()
-
-            results.forEach(fd => {
-                const bestMatch = this.faceMatcher.findBestMatch(fd.descriptor)
-                this.predction = bestMatch.toString();
-                console.log(bestMatch.toString())
-            })
-        }
-        */
-
-        return this.predction;
+        this.prediction = await this.runtime.ioDevices.video.findPersonNameVideo();
+        console.log(this.prediction);
+        const name = this.prediction.split(' (');
+        return name[0];
     }
 
     /**
