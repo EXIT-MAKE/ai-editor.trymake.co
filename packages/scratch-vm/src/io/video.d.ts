@@ -26,6 +26,7 @@ declare class Video {
      * @property {Function} addPersonVideo
      * @property {Function} deletePersonVideo
      * @property {Function} findPersonNameVideo
+     * @property {Function} checkPersonExistVideo
      * specified dimensions, format, and mirroring.
      */
     provider: any;

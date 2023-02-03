@@ -239,6 +239,16 @@ class Video {
         //console.log(personNameData);
         return personNameData;
     }
+
+    /**
+     * @return {number}
+     */
+    async checkPersonExistVideo (name, info) {
+        console.log(info);
+        const personExistData = await this.provider.checkPersonExistProvider(name, info);
+        console.log(personExistData);
+        return personExistData;
+    }
 }
 
 

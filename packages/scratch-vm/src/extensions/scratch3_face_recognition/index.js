@@ -242,6 +242,10 @@ class Scratch3faceRecognitionBlocks {
         await faceapi.tf.ENV.set("DEBUG", false);
         await faceapi.tf.ready();
         await this.runtime.ioDevices.video.loadFaceApiModelVideo();
+        await this.runtime.ioDevices.video.addPersonVideo("init", 5);
+        const timeout = setTimeout(async () => { 
+            await this.runtime.ioDevices.video.deletePersonVideo();
+        }, 6000);            
     }
 
     async _loop () {
@@ -446,6 +450,22 @@ class Scratch3faceRecognitionBlocks {
                     arguments: {
                     },
                 },
+                {
+                    opcode: "checkPersonExist",
+                    text: '[INFO] of [NAME]',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        NAME: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'Mike',
+                        },
+                        INFO: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'x_pos',
+                            menu: 'infomenu',
+                        },
+                    },
+                },
                 '---',
                 {
                     opcode: 'videoToggle',
@@ -483,7 +503,6 @@ class Scratch3faceRecognitionBlocks {
                     items: [
                         {text: 'X position', value: 'x_pos'},
                         {text: 'Y position', value: 'y_pos'},
-                        {text: 'Accuracy', value: 'accuracy'},
                     ]
                 },
                 VIDEO_STATE: {
@@ -533,6 +552,24 @@ class Scratch3faceRecognitionBlocks {
         console.log(this.prediction);
         const name = this.prediction.split(' (');
         return name[0];
+    }
+
+    /**
+     * @param {object} args - the block arguments
+     * @property {string} args.NAME
+     * @property {string} args.INFO
+     * @returns {string}
+     */
+    async checkPersonExist(args) {
+        this.position = await this.runtime.ioDevices.video.checkPersonExistVideo(args.NAME, args.INFO);
+        console.log(this.position);
+        return this.position;
+        /**
+        if(args.INFO === 'x_pos') 
+            return this.position.x + this.position.width / 2;
+        else if(args.INFO === 'y_pos') 
+            return this.position.y + this.position.height / 2;
+        */
     }
 
     /**

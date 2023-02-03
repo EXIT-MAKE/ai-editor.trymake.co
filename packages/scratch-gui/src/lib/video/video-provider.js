@@ -54,6 +54,7 @@ class VideoProvider {
          */
         this.labeledDescriptors = [];
         this.faceMatcher = null;
+        this.nameArray = [];
     }
 
     static get FORMAT_IMAGE_DATA () {
@@ -361,6 +362,7 @@ class VideoProvider {
      * @param {number} num
      */
     async addPersonProvider (name, num) {
+        this.nameArray.push(name);
         let descriptors = [];
         for(let i=1; i<=num;i++) {
             const timeout = setTimeout(async () => { 
@@ -384,10 +386,10 @@ class VideoProvider {
         } 
     }
 
-
     deletePersonProvider() {
         this.labeledDescriptors = [];
         this.faceMatcher = null;
+        this.nameArray = [];
         console.log("Delete Person List Complete");
     }
 
@@ -421,6 +423,57 @@ class VideoProvider {
 
         return name;
     }
+
+    /**
+    * @param {string} name
+    * @param {string} info
+    * 
+    * @returns {number}
+    */
+    async checkPersonExistProvider (name, info) {
+        
+        let returnValue = 0;
+        if (this._video) {
+            const results = await faceapi
+            .detectAllFaces(this._video)
+            .withFaceLandmarks()
+            .withFaceDescriptors()
+
+            results.forEach((fd, i) => {
+
+                //console.log("name");
+                const bestMatch = this.faceMatcher.findBestMatch(fd.descriptor);
+                let bestMatchName = bestMatch.toString();
+                bestMatchName = bestMatchName.split(' (')[0];
+                //console.log(name);
+                //console.log(bestMatchName);
+                //console.log(name == bestMatchName);
+
+                if(name == bestMatchName) {
+                    //const landmark = results[i].landmarks.getLeftEye();
+                    //const landmark = results[i].landmarks.getRightEye();
+                    //const landmark = results[i].landmarks.getNose();
+
+                    const x = results[i].detection.box.x;
+                    const y = results[i].detection.box.y;
+                    const w = results[i].detection.box.width;
+                    const h = results[i].detection.box.height;
+
+                    console.log(info);
+                    if(info === 'x_pos') {
+                        console.log(x + w/2 - 200);
+                        returnValue = x + w/2  - 200;
+                    }
+                    else if(info === 'y_pos') {
+                        console.log(250 - y - h/2);
+                        returnValue = 250 - y - h/2;
+                    }
+                }
+            })
+        }
+        return returnValue;
+    }
+
 }
 
 export default VideoProvider;
