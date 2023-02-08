@@ -11,6 +11,8 @@ require("@tensorflow/tfjs-backend-cpu");
 require("@tensorflow/tfjs-backend-webgl");
 const cocoSsd = require("@tensorflow-models/coco-ssd");
 const tf = require("@tensorflow/tfjs");
+const { isLabeledStatement } = require("typescript");
+const { tidy } = require("@tensorflow/tfjs");
 
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
@@ -208,7 +210,7 @@ class Scratch3objectDetectingBlocks {
     }
 
     isConnected() {
-        if(this.prediction != null) {
+        if(this._prediction != null) {
             return true;
         }
         else return false;
@@ -219,39 +221,17 @@ class Scratch3objectDetectingBlocks {
 
     async _loop () {
         while (true) {
-            const frame = this.runtime.ioDevices.video.getFrame({
+            this._frame = this.runtime.ioDevices.video.getFrame({
                 format: Video.FORMAT_IMAGE_DATA,
                 dimensions: Scratch3objectDetectingBlocks.DIMENSIONS
             });
-            console.log(frame);
+            //console.log(this._frame);
+            
             const time = +new Date();
-            if (frame) {
-                this.prediction = await this.estimateObjectOnImage(frame);
-                console.log(JSON.stringify(this.prediction, null, 2));
-                if (this.prediction.length > 0) {
-                    this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
-                } else {
-                    this.runtime.emit(this.runtime.constructor.PERIPHERAL_DISCONNECTED);
-                }
-            }
+            
             const estimateThrottleTimeout = (+new Date() - time)/4;
             await new Promise(r => setTimeout(r, estimateThrottleTimeout));
         }
-    }
-
-    async estimateObjectOnImage(imageElement) {
-        const cocoSsdModel = await this.ensurecocoSsdModelLoaded();
-        const prediction = await cocoSsdModel.detect(imageElement, 2, 0.7);
-        return prediction;
-    }
-
-    async ensurecocoSsdModelLoaded() {
-        if (!this._cocoSsdModel) {
-            console.log("loading start");
-            this._cocoSsdModel = await cocoSsd.load();
-            console.log("loading end");
-        }
-        return this._cocoSsdModel;
     }
 
     /**
@@ -381,6 +361,603 @@ class Scratch3objectDetectingBlocks {
         ];
     }
 
+    get CLASS_INFO () {
+        return [
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.person',
+                    default: '사람',
+                    description: ''
+                }),
+                value: 'person'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.bicycle',
+                    default: '자전거',
+                    description: ''
+                }),
+                value: 'bicycle'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.car',
+                    default: '차',
+                    description: ''
+                }),
+                value: 'car'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.motorcycle',
+                    default: '오토바이',
+                    description: ''
+                }),
+                value: 'motorcycle'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.airplane',
+                    default: '비행기',
+                    description: ''
+                }),
+                value: 'airplane'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.bus',
+                    default: '버스',
+                    description: ''
+                }),
+                value: 'bus'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.train',
+                    default: '기차',
+                    description: ''
+                }),
+                value: 'train'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.truck',
+                    default: '트럭',
+                    description: ''
+                }),
+                value: 'truck'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.traffic_light',
+                    default: '신호등',
+                    description: ''
+                }),
+                value: 'traffic light'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.stop_sign',
+                    default: '정지 신호',
+                    description: ''
+                }),
+                value: 'stop sign'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.parking_meter',
+                    default: '주차료 징수기',
+                    description: ''
+                }),
+                value: 'parking meter'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.bird',
+                    default: '새',
+                    description: ''
+                }),
+                value: 'bird'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.cat',
+                    default: '고양이',
+                    description: ''
+                }),
+                value: 'cat'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.dog',
+                    default: '개',
+                    description: ''
+                }),
+                value: 'dog'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.horse',
+                    default: '말',
+                    description: ''
+                }),
+                value: 'horse'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.sheep',
+                    default: '양',
+                    description: ''
+                }),
+                value: 'sheep'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.cow',
+                    default: '소',
+                    description: ''
+                }),
+                value: 'cow'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.elephant',
+                    default: '코끼리',
+                    description: ''
+                }),
+                value: 'elephant'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.bear',
+                    default: '곰',
+                    description: ''
+                }),
+                value: 'bear'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.zebra',
+                    default: '얼룩말',
+                    description: ''
+                }),
+                value: 'zebra'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.giraffe',
+                    default: '기린',
+                    description: ''
+                }),
+                value: 'giraffe'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.backpack',
+                    default: '백팩',
+                    description: ''
+                }),
+                value: 'backpack'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.umbrella',
+                    default: '우산',
+                    description: ''
+                }),
+                value: 'umbrella'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.handbag',
+                    default: '핸드백',
+                    description: ''
+                }),
+                value: 'handbag'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.tie',
+                    default: '넥타이',
+                    description: ''
+                }),
+                value: 'tie'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.suitcase',
+                    default: '여행가방',
+                    description: ''
+                }),
+                value: 'suitcase'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.frisbee',
+                    default: '프리스비',
+                    description: ''
+                }),
+                value: 'frisbee'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.skis',
+                    default: '스키',
+                    description: ''
+                }),
+                value: 'skis'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.snowboard',
+                    default: '스노우보드',
+                    description: ''
+                }),
+                value: 'snowboard'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.sports_ball',
+                    default: '스포츠볼',
+                    description: ''
+                }),
+                value: 'sports ball'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.kite',
+                    default: '연',
+                    description: ''
+                }),
+                value: 'kite'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.baseball_glove',
+                    default: '야구 글러브',
+                    description: ''
+                }),
+                value: 'baseball glove'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.skateboard',
+                    default: '스케이트보드',
+                    description: ''
+                }),
+                value: 'skateboard'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.surfboard',
+                    default: '서핑보드',
+                    description: ''
+                }),
+                value: 'surfboard'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.tennis_racket',
+                    default: '테니스 라켓',
+                    description: ''
+                }),
+                value: 'tennis racket'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.bottle',
+                    default: '병',
+                    description: ''
+                }),
+                value: 'bottle'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.wine_glass',
+                    default: '와인잔',
+                    description: ''
+                }),
+                value: 'wine glass'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.cup',
+                    default: '컵',
+                    description: ''
+                }),
+                value: 'cup'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.fork',
+                    default: '포크',
+                    description: ''
+                }),
+                value: 'fork'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.knife',
+                    default: '칼',
+                    description: ''
+                }),
+                value: 'knife'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.spoon',
+                    default: '스푼',
+                    description: ''
+                }),
+                value: 'spoon'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.bowl',
+                    default: '그릇',
+                    description: ''
+                }),
+                value: 'bowl'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.banana',
+                    default: '바나나',
+                    description: ''
+                }),
+                value: 'banana'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.apple',
+                    default: '사과',
+                    description: ''
+                }),
+                value: 'apple'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.sandwhich',
+                    default: '샌드위치',
+                    description: ''
+                }),
+                value: 'sandwhich'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.orange',
+                    default: '오렌지',
+                    description: ''
+                }),
+                value: 'orange'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.broccoli',
+                    default: '브로콜리',
+                    description: ''
+                }),
+                value: 'broccoli'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.carrot',
+                    default: '당근',
+                    description: ''
+                }),
+                value: 'carrot'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.pizza',
+                    default: '피자',
+                    description: ''
+                }),
+                value: 'pizza'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.donut',
+                    default: '도넛',
+                    description: ''
+                }),
+                value: 'donut'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.cake',
+                    default: '케이크',
+                    description: ''
+                }),
+                value: 'cake'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.chair',
+                    default: '의자',
+                    description: ''
+                }),
+                value: 'chair'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.couch',
+                    default: '소파',
+                    description: ''
+                }),
+                value: 'couch'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.potted_plant',
+                    default: '화분',
+                    description: ''
+                }),
+                value: 'potted plant'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.bed',
+                    default: '침대',
+                    description: ''
+                }),
+                value: 'bed'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.dining_table',
+                    default: '식사 테이블',
+                    description: ''
+                }),
+                value: 'dining table'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.toilet',
+                    default: '화장실',
+                    description: ''
+                }),
+                value: 'toilet'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.tv',
+                    default: '티비',
+                    description: ''
+                }),
+                value: 'tv'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.laptop',
+                    default: '노트북',
+                    description: ''
+                }),
+                value: 'laptop'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.mouse',
+                    default: '마우스',
+                    description: ''
+                }),
+                value: 'mouse'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.remote_keyboard',
+                    default: '키보드',
+                    description: ''
+                }),
+                value: 'remote keyboard'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.cell_phone',
+                    default: '휴대전화',
+                    description: ''
+                }),
+                value: 'cell phone'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.microwave',
+                    default: '전자렌지',
+                    description: ''
+                }),
+                value: 'microwave'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.oven',
+                    default: '오븐',
+                    description: ''
+                }),
+                value: 'oven'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.toaster',
+                    default: '스노우보드',
+                    description: ''
+                }),
+                value: 'toaster'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.sink',
+                    default: '싱크대',
+                    description: ''
+                }),
+                value: 'sink'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.refrigerator',
+                    default: '냉장고',
+                    description: ''
+                }),
+                value: 'refrigerator'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.book',
+                    default: '책',
+                    description: ''
+                }),
+                value: 'book'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.clock',
+                    default: '시계',
+                    description: ''
+                }),
+                value: 'clock'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.vase',
+                    default: '꽃병',
+                    description: ''
+                }),
+                value: 'vase'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.scissor',
+                    default: '가위',
+                    description: ''
+                }),
+                value: 'scissor'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.teddy_bear',
+                    default: '곰 인형',
+                    description: ''
+                }),
+                value: 'teddy bear'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.hair_drier',
+                    default: '헤어드라이어',
+                    description: ''
+                }),
+                value: 'hair drier'
+            },
+            {
+                name: formatMessage({
+                    id: 'objectDetecting.toothbrush',
+                    default: '칫솔',
+                    description: ''
+                }),
+                value: 'toothbrush'
+            },
+        ];
+    }
+
     /**
      * @returns {object} metadata for this extension and its blocks.
      */
@@ -394,7 +971,10 @@ class Scratch3objectDetectingBlocks {
             this.globalVideoTransparency = 50;
             this.projectStarted();
             this.firstInstall = false;
+            this._frame = null;
+            this._detectValue= 0.7;
             this._cocoSsdModel = null;
+            this._prediction = null;
         }
 
         // Return extension definition
@@ -409,9 +989,60 @@ class Scratch3objectDetectingBlocks {
             blockIconURI: blockIconURI,
             menuIconURI: menuIconURI,
             blocks: [
+                /**
                 {
-                    opcode: "detectedObjectName",
-                    text: '[ORDER]th COCO-SSD Detected Object Name',
+                    opcode: "repeatHat",
+                    text: '[SECOND]초 간격으로 계속 실행',
+                    blockType: BlockType.HAT,
+                    arguments: {
+                        SECOND: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 1,
+                        },
+                    },
+                },
+                */
+                {
+                    opcode: "detectVideo",
+                    text: '카메라 이미지 분석',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                    },
+                },
+                /**
+                {
+                    opcode: "detectImageUrl",
+                    text: '이미지 URL[URL] 분석',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        URL: {
+                            type: ArgumentType.STRING,
+                            defaultValue: "Enter URL",
+                        },
+                    },
+                },
+                */
+                {
+                    opcode: "setDetectValue",
+                    text: '인식 임계값을 [VALUE]%으로 설정',
+                    blockType: BlockType.COMMAND,
+                    arguments: {
+                        VALUE: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 50,
+                        },
+                    },
+                },
+                {
+                    opcode: "returnObjectAmount",
+                    text: '인식된 객체의 개수',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                    },
+                },
+                {
+                    opcode: "returnObjectName",
+                    text: '[ORDER]번쨰 객체의 클래스',
                     blockType: BlockType.REPORTER,
                     arguments: {
                         ORDER: {
@@ -421,8 +1052,8 @@ class Scratch3objectDetectingBlocks {
                     },
                 },
                 {
-                    opcode: "detectedObjectInfo",
-                    text: '[ORDER]th COCO-SSD Detected Object [INFO]',
+                    opcode: "returnObjectInfo",
+                    text: '[ORDER]번쨰 객체의 [INFO]',
                     blockType: BlockType.REPORTER,
                     arguments: {
                         ORDER: {
@@ -433,6 +1064,46 @@ class Scratch3objectDetectingBlocks {
                             type: ArgumentType.STRING,
                             menu: "infomenu",
                             defaultValue: "accuracy",
+                        },
+                    },
+                },
+                {
+                    opcode: "returnClassAmount",
+                    text: '인식된 [CLASS]의 개수',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        CLASS: {
+                            type: ArgumentType.STRING,
+                            menu: "classmenu",
+                            defaultValue: "person",
+                        }, defaultValue: "accuracy",
+                    },
+                },
+                {
+                    opcode: "returnClassNumber",
+                    text: '[ORDER]번째 인식된 [CLASS]의 객체 번호',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        ORDER: {
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 1,
+                        },
+                        CLASS: {
+                            type: ArgumentType.STRING,
+                            menu: "classmenu",
+                            defaultValue: "person",
+                        }, defaultValue: "accuracy",
+                    },
+                },
+                {
+                    opcode: "checkObjectExist",
+                    text: '[CLASS]이(가) 인식되었다면',
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        CLASS: {
+                            type: ArgumentType.STRING,
+                            menu: "classmenu",
+                            defaultValue: "person",
                         },
                     },
                 },
@@ -471,63 +1142,141 @@ class Scratch3objectDetectingBlocks {
                 infomenu: {
                     acceptReporters: true,
                     items: [
-                        {text: 'Accuracy', value: 'accuracy'},
-                        {text: 'X Position', value: 'x_position'},
-                        {text: 'Y Position', value: 'y_position'},
-                        {text: 'X Size', value: 'x_size'},
-                        {text: 'Y Size', value: 'y_size'},
+                        {text: '정확도', value: 'accuracy'},
+                        {text: 'X 위치', value: 'x_position'},
+                        {text: 'Y 위치', value: 'y_position'},
+                        {text: '너비', value: 'width'},
+                        {text: '높이', value: 'height'},
                     ]
                 },
                 VIDEO_STATE: {
                     acceptReporters: true,
                     items: this._buildMenu(this.VIDEO_STATE_INFO)
+                },
+                classmenu: {
+                    acceptReporters: true,
+                    items: this._buildMenu(this.CLASS_INFO)
                 }
             }
         };
     }
 
-    /**
-     * @param {object} args - the block arguments
-     * @property {number} args.ORDER
-     *
-     * @return {string} detected object name
-     */
-    detectedObjectName(args) {
-        if (this.prediction) {
-            if (this.prediction[args.ORDER - 1]) {
-                console.log(this.prediction[args.ORDER - 1].class);
-                return this.prediction[args.ORDER - 1].class;
-            }
-        }
-        return "NOT EXIST";
+    async repeatHat(args) {
+        /**
+        await setTimeout(function () {
+            return true;
+        }, args.SECOND * 1000);
+        */
+       return true;
     }
 
-    /**
-     * @param {object} args - the block arguments
-     * @property {number} args.ORDER
-     * @property {string} args.INFO
-     *
-     * @return {number} detected object info
-     */
-    detectedObjectInfo(args) {
-        console.log(this.prediction);
-        if (this.prediction) {
-            if (this.prediction[args.ORDER - 1]) {
+    async detectVideo() {
+        if (this._frame) {
+            this._prediction = await this.estimateObjectOnImage(this._frame);
+            console.log(JSON.stringify(this._prediction, null, 2));
+            if (this._prediction.length > 0) {
+                this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
+            } else {
+                this.runtime.emit(this.runtime.constructor.PERIPHERAL_DISCONNECTED);
+            }
+        }
+    }
+
+    async estimateObjectOnImage(imageElement) {
+        const cocoSsdModel = await this.ensurecocoSsdModelLoaded();
+        const prediction = await cocoSsdModel.detect(imageElement, 2, this._detectValue);
+        return prediction;
+    }
+
+    async ensurecocoSsdModelLoaded() {
+        if (!this._cocoSsdModel) {
+            console.log("loading start");
+            this._cocoSsdModel = await cocoSsd.load();
+            console.log("loading end");
+        }
+        return this._cocoSsdModel;
+    }
+
+    async setDetectValue(args) {
+        this._detectValue = args.VALUE / 100;
+    }
+
+    async returnObjectAmount() {
+        if (this._prediction) {
+            return this._prediction.length;
+        }
+    }
+
+    async returnObjectName(args) {
+        if (this._prediction) {
+            if (this._prediction[args.ORDER - 1]) {
+                console.log(this._prediction[args.ORDER - 1].class);
+                return this._prediction[args.ORDER - 1].class;
+            }
+        }
+        return "아직 인식되지 않음";
+    }
+
+    async returnObjectInfo(args) {
+        console.log(this._prediction);
+        if (this._prediction) {
+            if (this._prediction[args.ORDER - 1]) {
                 if (args.INFO == "accuracy") {
-                    return this.prediction[args.ORDER - 1].score;
+                    return this._prediction[args.ORDER - 1].score;
                 } else if (args.INFO == "x_position") {
-                    return this.prediction[args.ORDER - 1].bbox[0] - (Video.DIMENSIONS[0] / 2);
+                    return this._prediction[args.ORDER - 1].bbox[0] - (Video.DIMENSIONS[0] / 2);
                 } else if (args.INFO == "y_position") {
-                    return (Video.DIMENSIONS[1] / 2) - this.prediction[args.ORDER - 1].bbox[1];
-                } else if (args.INFO == "x_size") {
-                    return this.prediction[args.ORDER - 1].bbox[2];
-                } else if (args.INFO == "y_size") {
-                    return this.prediction[args.ORDER - 1].bbox[3];
+                    return (Video.DIMENSIONS[1] / 2) - this._prediction[args.ORDER - 1].bbox[1];
+                } else if (args.INFO == "width") {
+                    return this._prediction[args.ORDER - 1].bbox[2];
+                } else if (args.INFO == "height") {
+                    return this._prediction[args.ORDER - 1].bbox[3];
                 }
             }
             
         }
         return 0;
+    }
+
+    async returnClassAmount(args) {
+        let amount = 0;
+        if (this._prediction) {
+            for(let i = 0; i < this._prediction.length; i++) {
+                if (this._prediction[i].class == args.CLASS) {
+                    amount++;
+                }
+            }
+            return amount;
+        }
+        return 0;
+    }
+
+    async returnClassNumber(args) {
+        let amount = 0;
+        if (this._prediction) {
+            for(let i = 0; i < this._prediction.length; i++) {
+                console.log(this._prediction[i].class);
+                if (this._prediction[i].class == args.CLASS) {
+                    amount++;
+                    if(amount == args.ORDER) {
+                        return i + 1;
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+
+    async checkObjectExist(args) {
+        let amount = 0;
+        if (this._prediction) {
+            for(let i = 0; i < this._prediction.length; i++) {
+                if (this._prediction[i].class === args.CLASS) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
