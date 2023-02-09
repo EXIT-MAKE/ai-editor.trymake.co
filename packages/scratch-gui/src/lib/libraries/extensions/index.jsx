@@ -129,13 +129,13 @@ export default [
         featured: true
     },
     {
-        name: "Object Detecting",
+        name: "물체 인식 AI",
         extensionId: 'objectDetecting',
         iconURL: videoSensingIconURL,
         insetIconURL: videoSensingInsetIconURL,
         description: (
             <FormattedMessage
-                defaultMessage="Object Detection"
+                defaultMessage="비디오를 통해 약 80여개의 물체를 동시에 인식할 수 있는 AI 모델입니다."
                 description=""
                 id="gui.extension.object_detection.description"
             />

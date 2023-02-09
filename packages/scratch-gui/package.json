@@ -163,13 +163,6 @@
     "svelte-preprocess": "^4.10.7"
   },
   "overrides": {
-    "face-api.js": {
-      "@tensorflow/tfjs": "^1.5.2",
-      "@tensorflow/tfjs-backend-cpu": "^4.2.0",
-      "@tensorflow/tfjs-backend-webgl": "^4.2.0",
-      "@tensorflow/tfjs-core": "^1.5.2",
-      "@tensorflow/tfjs-layers": "^1.5.2",
-      "@tensorflow/tfjs-node": "^1.7.4"
-    }
+    
   }
 }
