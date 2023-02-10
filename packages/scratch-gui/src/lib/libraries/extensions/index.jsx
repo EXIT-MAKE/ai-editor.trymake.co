@@ -115,13 +115,13 @@ export default [
         featured: true
     },
     {
-        name: "Text Recognition",
+        name: "텍스트 인식 AI",
         extensionId: 'textRecognition',
         iconURL: videoSensingIconURL,
         insetIconURL: videoSensingInsetIconURL,
         description: (
             <FormattedMessage
-                defaultMessage="Text Recognition"
+                defaultMessage="비디오를 통해 다양한 언어를 인식할 수 있는 AI 모델입니다"
                 description=""
                 id="gui.extension.text_recognition.description"
             />
@@ -198,6 +198,8 @@ export default [
         ),
         featured: true
     },
+
+    /**
     {
          name: (
             <FormattedMessage
@@ -257,6 +259,7 @@ export default [
         ),
         featured: true
     }, //*/ // RANDI Removing extensions I don't want students to play with
+    
     {
         name: (
             <FormattedMessage
@@ -361,6 +364,8 @@ export default [
         featured: true,
         internetConnectionRequired: true
     },
+
+    /**
     {
         name: 'Makey Makey',
         extensionId: 'makeymakey',
@@ -528,4 +533,5 @@ export default [
         ),
         helpLink: 'https://scratch.mit.edu/vernier'
     },
+    */
 ];

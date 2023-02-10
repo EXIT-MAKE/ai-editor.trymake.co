@@ -425,7 +425,7 @@ class Scratch3textRecognitionBlocks {
             blocks: [
                 {
                     opcode: "loadLanguage",
-                    text: 'Load Language [LANG]',
+                    text: '언어 [LANG]으로 설정',
                     blockType: BlockType.COMMAND,
                     arguments: {
                         LANG: {
@@ -437,14 +437,14 @@ class Scratch3textRecognitionBlocks {
                 },
                 {
                     opcode: "captureImage",
-                    text: 'Capture Image and Recognize Text',
+                    text: '비디오에서 텍스트 인식',
                     blockType: BlockType.COMMAND,
                     arguments: {
                     },
                 },
                 {
                     opcode: "detectLanguage",
-                    text: 'Detected Text',
+                    text: '텍스트 인식 결과',
                     blockType: BlockType.REPORTER,
                     arguments: {
                     },
