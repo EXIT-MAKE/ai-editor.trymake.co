@@ -8,7 +8,6 @@ const Cast = require('../../util/cast');
 const Video = require('../../io/video');
 const formatMessage = require('format-message');
 const canvas = require('canvas'); 
-const faceapi = require('face-api.js');
 const { Canvas, Image, ImageData } = canvas
 
 /**

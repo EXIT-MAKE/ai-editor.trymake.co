@@ -151,8 +151,8 @@
     "@tensorflow/tfjs-backend-cpu": "^4.2.0",
     "@tensorflow/tfjs-backend-webgl": "^4.2.0",
     "@tensorflow/tfjs-core": "^4.2.0",
-    "@tensorflow/tfjs-layers": "^1.5.2",
-    "@tensorflow/tfjs-node": "^1.7.4",
+    "@tensorflow/tfjs-layers": "^4.2.0",
+    "@tensorflow/tfjs-node": "^4.2.0",
     "babel-polyfill": "^6.26.0",
     "canvas": "^2.11.0",
     "face-api.js": "^0.22.2",
@@ -163,6 +163,10 @@
     "svelte-preprocess": "^4.10.7"
   },
   "overrides": {
-    
+    "face-api.js": {
+      "@tensorflow/tfjs": "^1.7.0",
+      "@tensorflow/tfjs-core": "^1.7.0",
+      "@tensorflow/tfjs-node": "^1.7.0"
+    }
   }
 }
