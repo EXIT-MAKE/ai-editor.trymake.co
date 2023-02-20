@@ -7,7 +7,8 @@ const Cast = require('../../util/cast');
 const formatMessage = require('format-message');
 const Video = require('../../io/video');
 
-const handpose = require('@tensorflow-models/handpose');
+//const handpose = require('@tensorflow-models/handpose');
+const handPoseDetection = require('@tensorflow-models/hand-pose-detection');
 
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
@@ -214,41 +215,14 @@ class Scratch3PoseNetBlocks {
 
     async _loop () {
         while (true) {
-            const frame = this.runtime.ioDevices.video.getFrame({
+            this._frame = this.runtime.ioDevices.video.getFrame({
                 format: Video.FORMAT_IMAGE_DATA,
                 dimensions: Scratch3PoseNetBlocks.DIMENSIONS
             });
-
             const time = +new Date();
-            if (frame) {
-                this.handPoseState = await this.estimateHandPoseOnImage(frame);
-                if (this.isConnected()) {
-                    this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
-                } else {
-                    this.runtime.emit(this.runtime.constructor.PERIPHERAL_DISCONNECTED);
-                }
-            }
             const estimateThrottleTimeout = (+new Date() - time) / 4;
             await new Promise(r => setTimeout(r, estimateThrottleTimeout));
         }
-    }
-
-    /**
-     * @param imageElement
-     * @returns {Promise<AnnotatedPrediction[]>}
-     */
-    async estimateHandPoseOnImage(imageElement) {
-        const handModel = await this.getLoadedHandModel();
-        return await handModel.estimateHands(imageElement, {
-            flipHorizontal: false
-        });
-    }
-
-    async getLoadedHandModel() {
-        if (!this._handModel) {
-            this._handModel = await handpose.load();
-        }
-        return this._handModel;
     }
 
     /**
@@ -391,7 +365,7 @@ class Scratch3PoseNetBlocks {
             this.globalVideoTransparency = 50;
             this.projectStarted();
             this.firstInstall = false;
-            this._handModel = null;
+            this._detector = null;
         }
 
         // Return extension definition
@@ -407,20 +381,50 @@ class Scratch3PoseNetBlocks {
             menuIconURI: menuIconURI,
             blocks: [
                 {
-                    opcode: 'goToHandPart',
-                    text: 'go to [HAND_PART] [HAND_SUB_PART]',
+                    opcode: "detectVideo",
+                    text: '카메라 이미지 분석',
                     blockType: BlockType.COMMAND,
-                    isTerminal: false,
+                    arguments: {
+                    },
+                },
+                {
+                    opcode: "returnHandExist",
+                    text: '손이 인식[YESNO]',
+                    blockType: BlockType.BOOLEAN,
+                    arguments: {
+                        YESNO: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'exist',
+                            menu: 'yesnomenu'
+                        },
+                    },
+                },
+                {
+                    opcode: "returnHandness",
+                    text: '인식된 손의 종류',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                    },
+                },
+                {
+                    opcode: "returnHandPosition",
+                    text: '[HAND_PART]의 [HAND_SUB_PART]의 [XY] 위치',
+                    blockType: BlockType.REPORTER,
                     arguments: {
                         HAND_PART: {
-                            type: ArgumentType.STRING,
-                            defaultValue: 'thumb',
+                            type: ArgumentType.NUMBER,
+                            defaultValue: 1,
                             menu: 'HAND_PART'
                         },
                         HAND_SUB_PART: {
                             type: ArgumentType.NUMBER,
-                            defaultValue: 3,
+                            defaultValue: 4,
                             menu: 'HAND_SUB_PART'
+                        },
+                        XY: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'x',
+                            menu: 'xymenu'
                         },
                     },
                 },
@@ -457,24 +461,38 @@ class Scratch3PoseNetBlocks {
                 '---',
             ],
             menus: {
+                yesnomenu: {
+                    acceptReporters: true,
+                    items: [
+                        {text: '된다면', value: 'exist'},
+                        {text: '되지 않으면', value: 'noexist'},
+                    ]
+                },
+                xymenu: {
+                    acceptReporters: true,
+                    items: [
+                        {text: 'X', value: 'x'},
+                        {text: 'Y', value: 'y'},
+                    ]
+                },
                 HAND_PART: {
                     acceptReporters: true,
                     items: [
-                        {text: 'thumb', value: 'thumb'},
-                        {text: 'index finger', value: 'indexFinger'},
-                        {text: 'middle finger', value: 'middleFinger'},
-                        {text: 'ring finger', value: 'ringFinger'},
-                        {text: 'pinky', value: 'pinky'},
+                        {text: '엄지', value: '1'},
+                        {text: '검지', value: '2'},
+                        {text: '중지', value: '3'},
+                        {text: '약지', value: '4'},
+                        {text: '소지', value: '5'},
                         // {text: 'base of palm', value: 'palmBase'},
                     ]
                 },
                 HAND_SUB_PART: {
                     acceptReporters: true,
                     items: [
-                        {text: 'base', value: 0},
-                        {text: 'first knuckle', value: 1},
-                        {text: 'second knuckle', value: 2},
-                        {text: 'tip', value: 3},
+                        {text: '아래', value: 1},
+                        {text: '첫째 마디', value: 2},
+                        {text: '두번째 마디', value: 3},
+                        {text: '끝', value: 4},
                     ]
                 },
                 ATTRIBUTE: {
@@ -493,35 +511,80 @@ class Scratch3PoseNetBlocks {
         };
     }
 
-    goToHandPart(args, util) {
-        if (this.handPoseState && this.handPoseState.length > 0) {
-            const [x, y, z] = this.handPoseState[0].annotations[args['HAND_PART']][args['HAND_SUB_PART']];
-            const {x: scratchX, y: scratchY} = this.tfCoordsToScratch({x, y, z});
-            util.target.setXY(scratchX, scratchY, false);
+
+    async detectVideo() {
+        if (this._frame) {
+            this.handPoseState = await this.estimatePoseOnImage(this._frame);
+            console.log('handPoseState');
+            console.log(this.handPoseState);
+            if (this.handPoseState) {
+                this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
+            } else {
+                this.runtime.emit(this.runtime.constructor.PERIPHERAL_DISCONNECTED);
+            }
         }
     }
 
-    /**
-     * @param {object} args - the block arguments
-     * @param {BlockUtility} util - the block utility
-     * @returns {number} class name if video frame matched, empty number if model not loaded yet
-     */
-    handPosePositionX(args, util) {
-        return this.handPoseState.length > 0 ? this.tfCoordsToScratch({x: this.handPoseState[0].annotations[args['HAND_PART']][args['HAND_SUB_PART']][0]}).x : 0;
+    async estimatePoseOnImage(imageElement) {
+        // load the posenet model from a checkpoint
+        await this.ensureBodyModelLoaded();
+        return await this._detector.estimateHands(imageElement);
     }
 
-    /**
-     * @param {object} args - the block arguments
-     * @param {BlockUtility} util - the block utility
-     * @returns {number} class name if video frame matched, empty number if model not loaded yet
-     */
-    handPosePositionY(args, util) {
-        return this.handPoseState.length > 0 ? this.tfCoordsToScratch({y: this.handPoseState[0].annotations[args['HAND_PART']][args['HAND_SUB_PART']][1]}).y : 0;
+    async ensureBodyModelLoaded() {
+        if (!this._detector) {
+            const model = handPoseDetection.SupportedModels.MediaPipeHands;
+            const detectorConfig = {
+                runtime: 'tfjs',
+                solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+                modelType: 'full'
+            }
+            this._detector = await handPoseDetection.createDetector(model, detectorConfig);
+        }
+        console.log('detector');
+        console.log(this._detector);
+        return this._detector;
     }
 
-    tfCoordsToScratch({x, y}) {
-        return {x: x - 250, y: 200 - y};
+
+    async returnHandExist(args) {
+        if (args.YESNO === 'exist') {
+            if(this.handPoseState[0].length == 0) {
+                return false;
+            }
+            else {
+                return true;
+            }
+        }
+        else if (args.YESNO === 'noexist') {
+            if(this.handPoseState[0].length == 0) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
     }
+
+    async returnHandness(args) {
+        return this.handPoseState[0].handedness;
+    }
+
+    async returnHandPosition(args) {
+        const order = 4 * Number(args.HAND_PART - 1) + Number(args.HAND_SUB_PART);
+        console.log(order);
+        const keypoints = this.handPoseState[0].keypoints[order];
+        console.log(keypoints);
+        const x = keypoints.x;
+        const y = keypoints.y;
+        //const {x: scratchX, y: scratchY} = this.tfCoordsToScratch({x, y, z});
+        if(args.XY == 'x'){
+            return x - 250;
+        }
+        else if(args.XY == 'y'){
+            return 200 - y;
+        }
+    }    
 
     /**
      * A scratch command block handle that configures the video state from

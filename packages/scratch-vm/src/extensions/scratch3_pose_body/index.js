@@ -219,7 +219,8 @@ class Scratch3PoseNetBlocks {
             });
             const time = +new Date();
             if (frame) {
-                this.poseState = await this.estimatePoseOnImage(frame);
+                this.poseState = await this.estimatePoseOnImage(frame); 
+                console.log('poseState: ', this.poseState);
                 if (this.hasPose()) {
                     this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
                 } else {

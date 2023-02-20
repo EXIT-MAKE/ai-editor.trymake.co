@@ -157,13 +157,13 @@ export default [
         featured: true
     },
     {
-        name: "Hand Sensing",
+        name: "손 및 신체 인식 AI",
         extensionId: 'poseHand',
         iconURL: poseHandBlocksIconURL,
         insetIconURL: poseHandInsetIconURL,
         description: (
             <FormattedMessage
-                defaultMessage="Sense hand movement with the camera."
+                defaultMessage="비디오를 통해 손과 신체의 위치를 인지할 수 있는 AI 모델입니다."
                 description="PoseNet Description"
                 id="gui.extension.pose_hand.description"
             />
