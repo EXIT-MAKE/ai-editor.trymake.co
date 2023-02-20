@@ -10,6 +10,8 @@ const Video = require('../../io/video');
 //const handpose = require('@tensorflow-models/handpose');
 const handPoseDetection = require('@tensorflow-models/hand-pose-detection');
 
+const posenet = require('@tensorflow-models/posenet');
+
 function friendlyRound(amount) {
     return Number(amount).toFixed(2);
 }
@@ -373,7 +375,7 @@ class Scratch3PoseNetBlocks {
             id: EXTENSION_ID,
             name: formatMessage({
                 id: 'pose_hand.categoryName',
-                default: 'Hand Sensing',
+                default: '손 및 신체 인식',
                 description: 'Label for Hand Sensing category'
             }),
             showStatusButton: true,
@@ -420,6 +422,23 @@ class Scratch3PoseNetBlocks {
                             type: ArgumentType.NUMBER,
                             defaultValue: 4,
                             menu: 'HAND_SUB_PART'
+                        },
+                        XY: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'x',
+                            menu: 'xymenu'
+                        },
+                    },
+                },
+                {
+                    opcode: 'returnPartPosition',
+                    text: '[PART]의 [XY] 위치',
+                    blockType: BlockType.REPORTER,
+                    arguments: {
+                        PART: {
+                            type: ArgumentType.STRING,
+                            defaultValue: 'rightShoulder',
+                            menu: 'PART'
                         },
                         XY: {
                             type: ArgumentType.STRING,
@@ -495,6 +514,28 @@ class Scratch3PoseNetBlocks {
                         {text: '끝', value: 4},
                     ]
                 },
+                PART: {
+                    acceptReporters: true,
+                    items: [
+                        {text: '코', value: 'nose'},
+                        {text: '오른쪽 눈', value: 'leftEye'},
+                        {text: '왼쪽 눈', value: 'rightEye'},
+                        {text: '오른쪽 귀', value: 'leftEar'},
+                        {text: '왼쪽 귀', value: 'rightEar'},
+                        {text: '오른쪽 어깨', value: 'leftShoulder'},
+                        {text: '왼쪽 어깨', value: 'rightShoulder'},
+                        {text: '오른쪽 팔꿈치', value: 'leftElbow'},
+                        {text: '왼쪽 팔꿈치', value: 'rightElbow'},
+                        {text: '오른쪽 손목', value: 'leftWrist'},
+                        {text: '왼쪽 손목', value: 'rightWrist'},
+                        {text: '오른쪽 골반', value: 'leftHip'},
+                        {text: '왼쪽 골반', value: 'rightHip'},
+                        {text: '오른쪽 무릎', value: 'leftKnee'},
+                        {text: '왼쪽 무릎', value: 'rightKnee'},
+                        {text: '오른쪽 발못', value: 'leftAnkle'},
+                        {text: '왼쪽 발목', value: 'rightAnkle'},
+                    ]
+                },
                 ATTRIBUTE: {
                     acceptReporters: true,
                     items: this._buildMenu(this.ATTRIBUTE_INFO)
@@ -514,10 +555,18 @@ class Scratch3PoseNetBlocks {
 
     async detectVideo() {
         if (this._frame) {
-            this.handPoseState = await this.estimatePoseOnImage(this._frame);
-            console.log('handPoseState');
-            console.log(this.handPoseState);
+            this.handPoseState = await this.estimateHandOnImage(this._frame);
+            console.log('handPoseState: ', this.handPoseState);
             if (this.handPoseState) {
+                this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
+            } else {
+                this.runtime.emit(this.runtime.constructor.PERIPHERAL_DISCONNECTED);
+            }
+
+
+            this.bodyPoseState = await this.estimatePoseOnImage(this._frame); 
+            console.log('bodyPoseState: ', this.bodyPoseState);
+            if (this.bodyPoseState) {
                 this.runtime.emit(this.runtime.constructor.PERIPHERAL_CONNECTED);
             } else {
                 this.runtime.emit(this.runtime.constructor.PERIPHERAL_DISCONNECTED);
@@ -525,13 +574,13 @@ class Scratch3PoseNetBlocks {
         }
     }
 
-    async estimatePoseOnImage(imageElement) {
+    async estimateHandOnImage(imageElement) {
         // load the posenet model from a checkpoint
-        await this.ensureBodyModelLoaded();
+        await this.ensureHandModelLoaded();
         return await this._detector.estimateHands(imageElement);
     }
 
-    async ensureBodyModelLoaded() {
+    async ensureHandModelLoaded() {
         if (!this._detector) {
             const model = handPoseDetection.SupportedModels.MediaPipeHands;
             const detectorConfig = {
@@ -546,10 +595,25 @@ class Scratch3PoseNetBlocks {
         return this._detector;
     }
 
+    async estimatePoseOnImage(imageElement) {
+        // load the posenet model from a checkpoint
+        const bodyModel = await this.ensureBodyModelLoaded();
+        return await bodyModel.estimateSinglePose(imageElement, {
+            flipHorizontal: false
+        });
+    }
+
+    async ensureBodyModelLoaded() {
+        if (!this._bodyModel) {
+            this._bodyModel = await posenet.load();
+        }
+        return this._bodyModel;
+    }
+
 
     async returnHandExist(args) {
         if (args.YESNO === 'exist') {
-            if(this.handPoseState[0].length == 0) {
+            if(this.handPoseState[0].length === 0) {
                 return false;
             }
             else {
@@ -557,7 +621,7 @@ class Scratch3PoseNetBlocks {
             }
         }
         else if (args.YESNO === 'noexist') {
-            if(this.handPoseState[0].length == 0) {
+            if(this.handPoseState[0].length === 0) {
                 return true;
             }
             else {
@@ -584,7 +648,23 @@ class Scratch3PoseNetBlocks {
         else if(args.XY == 'y'){
             return 200 - y;
         }
-    }    
+    }
+
+    async returnPartPosition(args) {
+        if (this.bodyPoseState) {
+            const {x, y} = this.tfCoordsToScratch(this.bodyPoseState.keypoints.find(point => point.part === args['PART']).position);
+            if(args.XY == 'x'){
+                return x;
+            }
+            else if(args.XY == 'y'){
+                return y;
+            }
+        }
+    }
+
+    tfCoordsToScratch({x, y}) {
+        return {x: x - 250, y: 200 - y};
+    }
 
     /**
      * A scratch command block handle that configures the video state from

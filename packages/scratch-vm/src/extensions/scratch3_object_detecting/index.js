@@ -982,7 +982,7 @@ class Scratch3objectDetectingBlocks {
             id: EXTENSION_ID,
             name: formatMessage({
                 id: 'objectDetecting.categoryName',
-                default: 'Object Detecting',
+                default: '물체 인식',
                 description: 'Label for coco-ssd category'
             }),
             showStatusButton: true,

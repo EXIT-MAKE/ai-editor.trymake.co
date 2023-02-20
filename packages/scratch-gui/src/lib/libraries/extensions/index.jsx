@@ -77,12 +77,12 @@ export default [
     {
         name: (
             <FormattedMessage
-                defaultMessage="Teachable Machine"
+                defaultMessage="Teachable Machine (개발 중)"
                 description="Teachable Machine name"
                 id="gui.extension.teachable-machine.name"
             />
         ),
-        extensionId: 'teachableMachine',
+        extensionId: '구글의 AI 모델 생성 사이트 teachableMachine을 활용하는 AI 활용 블럭입니다.',
         iconURL: teachableMachineBlocksIconURL,
         insetIconURL: teachableMachineBlocksInsetIconURL,
         description: (
@@ -143,20 +143,6 @@ export default [
         featured: true
     },
     {
-        name: "Face Recognition",
-        extensionId: 'faceRecognition',
-        iconURL: videoSensingIconURL,
-        insetIconURL: videoSensingInsetIconURL,
-        description: (
-            <FormattedMessage
-                defaultMessage="Face Recognition"
-                description=""
-                id="gui.extension.face_recognition.description"
-            />
-        ),
-        featured: true
-    },
-    {
         name: "손 및 신체 인식 AI",
         extensionId: 'poseHand',
         iconURL: poseHandBlocksIconURL,
@@ -171,6 +157,20 @@ export default [
         featured: true
     },
     {
+        name: "얼굴 인식 (개발 중)",
+        extensionId: 'faceRecognition',
+        iconURL: videoSensingIconURL,
+        insetIconURL: videoSensingInsetIconURL,
+        description: (
+            <FormattedMessage
+                defaultMessage="비디오를 통해 얼굴과 이름을 등록하고, 이를 인지할 수 있는 AI 모델입니다."
+                description=""
+                id="gui.extension.face_recognition.description"
+            />
+        ),
+        featured: true
+    },
+    {
         name: "Face Sensing",
         extensionId: 'poseFace',
         iconURL: poseFaceBlocksIconURL,
@@ -180,20 +180,6 @@ export default [
                 defaultMessage="Sense face movement with the camera."
                 description="PoseNet Description"
                 id="gui.extension.pose_face.description"
-            />
-        ),
-        featured: true
-    },
-    {
-        name: "Body Sensing",
-        extensionId: 'poseBody',
-        iconURL: poseBodyBlocksIconURL,
-        insetIconURL: poseBodyInsetIconURL,
-        description: (
-            <FormattedMessage
-                defaultMessage="Sense body position with the camera."
-                description="PoseNet Description"
-                id="gui.extension.pose_body.description"
             />
         ),
         featured: true

@@ -416,7 +416,7 @@ class Scratch3textRecognitionBlocks {
             id: EXTENSION_ID,
             name: formatMessage({
                 id: 'textRecognition.categoryName',
-                default: 'text Recognition',
+                default: '텍스트 인식',
                 description: 'Label for text recognizition category'
             }),
             showStatusButton: true,
