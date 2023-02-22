@@ -72,7 +72,7 @@ import remixIcon from './icon--remix.svg';
 import dropdownCaret from './dropdown-caret.svg';
 import languageIcon from '../language-selector/language-icon.svg';
 
-import scratchLogo from './prg-white.png';
+import scratchLogo from './maromav-logo.png';
 
 import sharedMessages from '../../lib/shared-messages';
 
@@ -684,7 +684,7 @@ class MenuBar extends React.Component {
                     <Divider className={classNames(styles.divider)} />
                     <a
                         className={classNames(styles.menuBarItem, styles.hoverable)}
-                        href="https://httyr.media.mit.edu/tutorials"
+                        href="https://https://edu.trymake.co/"
                         target="_blank"
                     >
                         Curriculum  Tutorials
