@@ -5,8 +5,8 @@ import popWav from '!arraybuffer-loader!./83a9787d4cb6f3b7632b4ddfebf74367.wav';
 import meowWav from '!arraybuffer-loader!./83c36d806dc92327b9e7049a565c6bff.wav';
 import motorWav from '!arraybuffer-loader!./tinybit_motor.wav';
 import backdrop from '!raw-loader!./cd21514d0531fdffb22204e0ec5ed84a.svg';
-import costume1 from '!raw-loader!./tinybit_top.svg';
-import costume2 from '!raw-loader!./tinybit_heart.svg';
+import costume1 from '!raw-loader!./maro_basic.svg';
+import costume2 from '!raw-loader!./maro_basic.svg';
 /* eslint-enable import/no-unresolved */
 
 const defaultProject = translator => {

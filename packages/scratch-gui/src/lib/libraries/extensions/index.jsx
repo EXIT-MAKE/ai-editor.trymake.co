@@ -7,10 +7,10 @@ import { FormattedMessage } from 'react-intl';
 
 import poseHandBlocksIconURL from './newImage/hand.png';
 import textBlocksIconURL from './newImage/pencil.png';
-import objectBlocksIconURL from './newImage/cup.png';
+import objectBlocksIconURL from './newImage/webcam.png';
 import poseHandBlocksIconURL2 from './newImage/hand2.png';
 import textBlocksIconURL2 from './newImage/pencil2.png';
-import objectBlocksIconURL2 from './newImage/cup2.png';
+import objectBlocksIconURL2 from './newImage/webcam2.png';
 
 import textClassificationBlocksIconURL from './text_classification/text-classification-blocks.png';
 import textClassificationBlocksInsetIconURL from './text_classification/text-classification-blocks-small.svg';
