@@ -4,11 +4,19 @@
 import React from 'react';
 import { FormattedMessage } from 'react-intl';
 
+
+import poseHandBlocksIconURL from './newImage/hand.png';
+import textBlocksIconURL from './newImage/pencil.png';
+import objectBlocksIconURL from './newImage/cup.png';
+import poseHandBlocksIconURL2 from './newImage/hand2.png';
+import textBlocksIconURL2 from './newImage/pencil2.png';
+import objectBlocksIconURL2 from './newImage/cup2.png';
+
 import textClassificationBlocksIconURL from './text_classification/text-classification-blocks.png';
 import textClassificationBlocksInsetIconURL from './text_classification/text-classification-blocks-small.svg';
 
 import poseBodyBlocksIconURL from './posenet/pose-body.png';
-import poseHandBlocksIconURL from './posenet/pose-hand.png';
+//import poseHandBlocksIconURL from './posenet/pose-hand.png';
 import poseFaceBlocksIconURL from './posenet/pose-face.png';
 import teachableMachineBlocksIconURL from './teachable-machine-blocks/teachable-machine-blocks.png';
 import teachableMachineBlocksInsetIconURL from './teachable-machine-blocks/teachable-machine-blocks-small.svg';
@@ -97,7 +105,7 @@ export default [
     {
         name: (
             <FormattedMessage
-                defaultMessage="Text Classification"
+                defaultMessage="Text Classification (개발 중))"
                 description="Text Classification name"
                 id="gui.extension.text-classification.name"
             />
@@ -117,8 +125,8 @@ export default [
     {
         name: "텍스트 인식 AI",
         extensionId: 'textRecognition',
-        iconURL: videoSensingIconURL,
-        insetIconURL: videoSensingInsetIconURL,
+        iconURL: textBlocksIconURL,
+        insetIconURL: textBlocksIconURL2,
         description: (
             <FormattedMessage
                 defaultMessage="비디오를 통해 다양한 언어를 인식할 수 있는 AI 모델입니다"
@@ -131,8 +139,8 @@ export default [
     {
         name: "물체 인식 AI",
         extensionId: 'objectDetecting',
-        iconURL: videoSensingIconURL,
-        insetIconURL: videoSensingInsetIconURL,
+        iconURL: objectBlocksIconURL,
+        insetIconURL: objectBlocksIconURL2,
         description: (
             <FormattedMessage
                 defaultMessage="비디오를 통해 약 80여개의 물체를 동시에 인식할 수 있는 AI 모델입니다."
@@ -146,7 +154,7 @@ export default [
         name: "손 및 신체 인식 AI",
         extensionId: 'poseHand',
         iconURL: poseHandBlocksIconURL,
-        insetIconURL: poseHandInsetIconURL,
+        insetIconURL: poseHandBlocksIconURL2,
         description: (
             <FormattedMessage
                 defaultMessage="비디오를 통해 손과 신체의 위치를 인지할 수 있는 AI 모델입니다."
@@ -170,6 +178,7 @@ export default [
         ),
         featured: true
     },
+    /**
     {
         name: "Face Sensing",
         extensionId: 'poseFace',
@@ -184,6 +193,7 @@ export default [
         ),
         featured: true
     },
+    */
 
     /**
     {
