@@ -40,6 +40,7 @@ const builtinExtensions = {
     translate: () => require('../extensions/scratch3_translate'),
     videoSensing: () => require('../extensions/scratch3_video_sensing'),
     objectDetecting: () => require('../extensions/scratch3_object_detecting'),
+    speechRecognition: () => require('../extensions/scratch3_speech_recognition'),
     textRecognition: () => require('../extensions/scratch3_text_recognition'),
     faceRecognition: () => require('../extensions/scratch3_face_recognition'),
     ev3: () => require('../extensions/scratch3_ev3'),

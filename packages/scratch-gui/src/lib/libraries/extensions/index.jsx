@@ -8,9 +8,12 @@ import { FormattedMessage } from 'react-intl';
 import poseHandBlocksIconURL from './newImage/hand.png';
 import textBlocksIconURL from './newImage/pencil.png';
 import objectBlocksIconURL from './newImage/webcam.png';
+import speechBlocksIconURL from './newImage/mic.png';
+
 import poseHandBlocksIconURL2 from './newImage/hand2.png';
 import textBlocksIconURL2 from './newImage/pencil2.png';
 import objectBlocksIconURL2 from './newImage/webcam2.png';
+import speechBlocksIconURL2 from './newImage/mic2.png';
 
 import textClassificationBlocksIconURL from './text_classification/text-classification-blocks.png';
 import textClassificationBlocksInsetIconURL from './text_classification/text-classification-blocks-small.svg';
@@ -160,6 +163,20 @@ export default [
                 defaultMessage="비디오를 통해 손과 신체의 위치를 인지할 수 있는 AI 모델입니다."
                 description="PoseNet Description"
                 id="gui.extension.pose_hand.description"
+            />
+        ),
+        featured: true
+    },
+    {
+        name: "음성 인식 AI",
+        extensionId: 'speechRecognition',
+        iconURL: speechBlocksIconURL,
+        insetIconURL: speechBlocksIconURL2,
+        description: (
+            <FormattedMessage
+                defaultMessage="마이크를 통해 입력된 음성을 인식할 수 있는 AI 모델입니다 (현재는 영어만 지원합니다)"
+                description=""
+                id="gui.extension.speech_recognition.description"
             />
         ),
         featured: true
